@@ -1,16 +1,11 @@
 {
-    "name": "Tests",
+    "name": "Pico8",
     "references": [
         "GUID:4cf6ba2d2f4d4704dae08c2c74ebddc2",
-        "GUID:b01a6dc59b0bbab4da852552277e46dc",
-        "GUID:814f7d3ec8e78d246af396dd37a8b144"
+        "GUID:b01a6dc59b0bbab4da852552277e46dc"
     ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
