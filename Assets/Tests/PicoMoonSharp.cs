@@ -143,15 +143,15 @@ namespace Tests
             // +=
             var str = @"
                 x = 0xff
-                y = 0xff.7fff
+                y = 0x11.4000
                 return x, y
             ";
 
             var result = script.DoString(str);
 
             Assert.AreEqual((Fix)0xff, result.Tuple[0].Number, "x");
-            Assert.Less(result.Tuple[1].Number, (Fix)255.45, "y");
-            Assert.Greater(result.Tuple[1].Number, (Fix)255.55, "y");
+            Assert.Less(result.Tuple[1].Number, (Fix)17.24, "y");
+            Assert.Greater(result.Tuple[1].Number, (Fix)17.26, "y");
         }
     }
 }

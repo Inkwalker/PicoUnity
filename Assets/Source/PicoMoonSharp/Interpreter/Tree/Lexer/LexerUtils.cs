@@ -57,7 +57,7 @@ namespace PicoMoonSharp.Interpreter.Tree
 			if (!uint.TryParse(txt.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out res))
 				throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
 
-			return new Fix((int)res);
+			return (int)res;
 		}
 
 		public static string ReadHexProgressive(string s, ref double d, out int digits)
