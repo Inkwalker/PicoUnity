@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace PicoUnity
 {
-    public class MemoryModule
+    public class MemoryModule : EmulatorModule
     {
         #region Constants
         public const int   
@@ -202,6 +202,21 @@ namespace PicoUnity
                 var ls = ramListeners[i];
                 if (dst_addr < ls.Address + ls.Length && dst_addr + len >= ls.Address) ls.OnMemSet();
             }
+        }
+
+        public override ApiTable GetApiTable()
+        {
+            return new ApiTable()
+            {
+                { "peek",   (Func<int, byte>)        Peek },
+                { "peek2",  (Func<int, short>)       Peek2 },
+                { "peek4",  (Func<int, int>)         Peek4 },
+                { "poke",   (Action<int, byte>)      Poke },
+                { "poke2",  (Action<int, short>)     Poke2 },
+                { "poke4",  (Action<int, int>)       Poke4 },
+                { "memcpy", (Action<int, int, int>)  MemCpy },
+                { "memset", (Action<int, byte, int>) MemSet },
+            };
         }
 
         #endregion
