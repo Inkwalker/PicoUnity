@@ -1,6 +1,7 @@
 ﻿using PicoMoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace PicoUnity
 {
@@ -8,15 +9,21 @@ namespace PicoUnity
     {
         private Script luaEngine;
         private MemoryModule memory;
+        private GraphicsModule gpu;
+
+        public Texture2D ScreenTexture => gpu.Texture;
 
         public PicoEmulator()
         {
             memory = new MemoryModule();
             memory.InitRam();
 
+            gpu = new GraphicsModule(memory, "pico8");
+
             luaEngine = new Script();
 
             RegisterAPI( memory.GetApiTable() );
+            RegisterAPI( gpu.GetApiTable() );
         }
 
         private void RegisterAPI(EmulatorModule.ApiTable api)
@@ -43,7 +50,9 @@ namespace PicoUnity
         public void Update()
         {
             Call("_update");
-            //Call("_draw");
+            Call("_draw");
+
+            gpu.Flip();
         }
     }
 }

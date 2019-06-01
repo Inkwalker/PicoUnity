@@ -8,7 +8,7 @@ namespace PicoUnity
     public class MemoryModule : EmulatorModule
     {
         #region Constants
-        public const int   
+        public const int
             ADDR_SPRITE = 0x0,
             ADDR_SHARED = 0x1000,
             ADDR_MAP = 0x2000,
@@ -137,6 +137,43 @@ namespace PicoUnity
             }
         }
 
+        public byte PeekHalf(int offset, int element)
+        {
+            int addr = offset + element / 2;
+
+            if (addr >= SIZE_TOTAL) return 0;
+
+            byte result = Peek(addr);
+            if (element % 2 == 0)
+            {
+                result = (byte)(result & 0x0f);
+            }
+            else
+            {
+                result = (byte)(result >> 4);
+            }
+
+            return result;
+        }
+
+        public void PokeHalf(int offset, int element, byte val)
+        {
+            int addr = offset + element / 2;
+
+            byte result = Peek(addr);
+            if (element % 2 == 0)
+            {
+                result = (byte)(result & 0xf0);
+                val    = (byte)(val    & 0x0f);
+            }
+            else
+            {
+                result = (byte)(result & 0x0f);
+                val    = (byte)(val << 4);
+            }
+            Poke(addr, (byte)(result + val));
+        }
+
         #region Pico8 API
 
         public byte Peek(int addr)
@@ -204,6 +241,8 @@ namespace PicoUnity
             }
         }
 
+        #endregion
+
         public override ApiTable GetApiTable()
         {
             return new ApiTable()
@@ -218,7 +257,5 @@ namespace PicoUnity
                 { "memset", (Action<int, byte, int>) MemSet },
             };
         }
-
-        #endregion
     }
 }
