@@ -15,6 +15,28 @@ namespace PicoUnity
         private Texture2D fontTexture;
         private byte[] buffer;
 
+        #region Draw State
+
+        private byte CursorX
+        {
+            get => memory.Peek(MemoryModule.ADDR_CURSOR_X);
+            set => memory.Poke(MemoryModule.ADDR_CURSOR_X, value);
+        }
+
+        private byte CursorY
+        {
+            get => memory.Peek(MemoryModule.ADDR_CURSOR_Y);
+            set => memory.Poke(MemoryModule.ADDR_CURSOR_Y, value);
+        }
+
+        public byte PenColor
+        {
+            get => memory.Peek(MemoryModule.ADDR_PEN_COLOR);
+            set => memory.Poke(MemoryModule.ADDR_PEN_COLOR, value);
+        }
+
+        #endregion
+
         public Texture2D Texture { get; private set; }
 
         public GraphicsModule(MemoryModule memory, string font)
@@ -47,6 +69,42 @@ namespace PicoUnity
             if (x < clip_x0 || y < clip_y0 || x > clip_x1 || y > clip_y1) return;
 
             memory.PokeHalf(MemoryModule.ADDR_VRAM, y * ScreenWidth + x, color);
+        }
+
+        private int GetCharacterWidth(byte character)
+        {
+            if (character < 32) return 0; //special characters
+            if (character < 128) return FontWidth; //normal characters;
+
+            return FontWidth * 2; // double charactes
+        }
+
+        private void DrawCharacter(int x, int y, byte character)
+        {
+            if (character < 32) return; //skip special characters
+
+            int font_index = character - 32;
+            font_index = font_index > 95 ? (font_index - 96) * 2 + 96 : font_index; //double characters, 96 single characters in the font
+
+            int tex_w = fontTexture.width / FontWidth;
+
+            int char_x = font_index % tex_w * FontWidth;
+            int char_y = fontTexture.height - font_index / tex_w * FontHeight;
+
+            int char_w = GetCharacterWidth(character);
+
+            for (int xx = 0; xx < char_w; xx++)
+            {
+                for (int yy = 0; yy < FontHeight; yy++)
+                {
+                    var c = fontTexture.GetPixel(char_x + xx, char_y - yy - 1);
+
+                    if (c.grayscale > 0.5f)
+                    {
+                        Pset(x + xx, y + yy, null);
+                    }
+                }
+            }
         }
 
         #region Pico8 API
@@ -135,7 +193,7 @@ namespace PicoUnity
         {
             col = col.HasValue ? col : 0;
 
-            memory.Poke(MemoryModule.ADDR_PEN_COLOR, (byte)(col.Value & 0xf));
+            PenColor = (byte)(col.Value & 0xf);
         }
 
         public void Cursor(int? x = 0, int? y = 0, int? col = null)
@@ -143,8 +201,8 @@ namespace PicoUnity
             x = x.HasValue ? x : 0;
             y = y.HasValue ? y : 0;
 
-            memory.Poke(MemoryModule.ADDR_CURSOR_X, (byte)x.Value);
-            memory.Poke(MemoryModule.ADDR_CURSOR_Y, (byte)y.Value);
+            CursorX = (byte)x.Value;
+            CursorY = (byte)y.Value;
 
             if (col.HasValue) Color(col.Value);
         }
@@ -206,7 +264,43 @@ namespace PicoUnity
             if (real_x < 0 || real_x >= ScreenWidth || real_y < 0 || real_y >= ScreenHeight) return;
 
             //TODO: pal() support
-            PokeScreen(real_x, real_y, memory.Peek(MemoryModule.ADDR_PEN_COLOR));
+            PokeScreen(real_x, real_y, PenColor);
+        }
+
+        public void Print(string str, int? x, int? y, int? col = null)
+        {
+            var chars = str.ToCharArray();
+            var ascii = System.Array.ConvertAll(chars, c => (byte)c);
+
+            int start_x = x.HasValue ? x.Value : CursorX;
+            int start_y = y.HasValue ? y.Value : CursorY;
+
+            if (col.HasValue) Color(col.Value);
+
+            int xx = start_x;
+            int yy = start_y;
+
+            Cursor(start_x, start_y);
+
+            for (int i = 0; i < ascii.Length; i++)
+            {
+                if (ascii[i] == 10) //new line
+                {
+                    xx = start_x;
+                    yy += 6;
+
+                    if (y.HasValue == false)
+                        CursorY += 6;
+                }
+                else
+                {
+                    DrawCharacter(xx, yy, ascii[i]);
+                    xx += GetCharacterWidth(ascii[i]);
+                }
+            }
+
+            if (y.HasValue == false)
+                CursorY += 6;
         }
 
         public void Rect(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
@@ -250,6 +344,7 @@ namespace PicoUnity
                 { "line",     (Action<int, int, int, int, int?>) Line },
                 { "pget",     (Func<int?, int?, byte>)           Pget },
                 { "pset",     (Action<int?, int?, int?>)         Pset },
+                { "print",    (Action<string, int?, int?, int?>) Print },
                 { "rect",     (Action<int, int, int, int, int?>) Rect },
                 { "rectfill", (Action<int, int, int, int, int?>) Rectfill },
             };

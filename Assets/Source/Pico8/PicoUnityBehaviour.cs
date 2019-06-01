@@ -25,6 +25,8 @@ namespace PicoUnity
         {
             emulator.Run(@"
                 function _draw()
+                    print('graphics test', 4, 1, 7)
+
                     pset(0, 0, 7)
                     pset(2, 0, 7)
                     pset(0, 2, 7)
