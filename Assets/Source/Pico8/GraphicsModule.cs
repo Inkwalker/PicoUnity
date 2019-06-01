@@ -51,6 +51,74 @@ namespace PicoUnity
 
         #region Pico8 API
 
+        public void Circ(int? x0 = null, int? y0 = null, int r = 4, int? col = null)
+        {
+            if (r < 0) return;
+
+            x0 = x0.HasValue ? x0 : 0;
+            y0 = y0.HasValue ? y0 : 0;
+
+            int d = (5 - r * 4) / 4;
+            int x = 0;
+            int y = r;
+
+            do
+            {
+                Pset(x + x0.Value, y + y0.Value, col);
+                Pset(x + x0.Value, -y + y0.Value, col);
+                Pset(-x + x0.Value, y + y0.Value, col);
+                Pset(-x + x0.Value, -y + y0.Value, col);
+                Pset(y + x0.Value, x + y0.Value, col);
+                Pset(y + x0.Value, -x + y0.Value, col);
+                Pset(-y + x0.Value, x + y0.Value, col);
+                Pset(-y + x0.Value, -x + y0.Value, col);
+
+                if (d < 0)
+                {
+                    d += 2 * x + 1;
+                }
+                else
+                {
+                    d += 2 * (x - y) + 1;
+                    y--;
+                }
+                x++;
+            }
+            while (x <= y);
+        }
+
+        public void Circfill(int? x0 = null, int? y0 = null, int r = 4, int? col = null)
+        {
+            if (r < 0) return;
+
+            x0 = x0.HasValue ? x0 : 0;
+            y0 = y0.HasValue ? y0 : 0;
+
+            int d = (5 - r * 4) / 4;
+            int x = 0;
+            int y = r;
+
+            do
+            {
+                Line(x0.Value - x, y0.Value + y, x0.Value + x, y0.Value + y, col);
+                Line(x0.Value - y, y0.Value + x, x0.Value + y, y0.Value + x, col);
+                Line(x0.Value - x, y0.Value - y, x0.Value + x, y0.Value - y, col);
+                Line(x0.Value - y, y0.Value - x, x0.Value + y, y0.Value - x, col);
+
+                if (d < 0)
+                {
+                    d += 2 * x + 1;
+                }
+                else
+                {
+                    d += 2 * (x - y) + 1;
+                    y--;
+                }
+                x++;
+            }
+            while (x <= y);
+        }
+
         public void Cls(int? col = 0)
         {
             //TODO: pal() support
@@ -79,6 +147,34 @@ namespace PicoUnity
             memory.Poke(MemoryModule.ADDR_CURSOR_Y, (byte)y.Value);
 
             if (col.HasValue) Color(col.Value);
+        }
+        public void Line(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
+        {
+            //TODO: lineTo
+
+            int dx = x1 - x0;
+            int dy = y1 - y0;
+
+            int steps;
+
+            if (Math.Abs(dx) > Math.Abs(dy))
+                steps = Math.Abs(dx);
+            else
+                steps = Math.Abs(dy);
+
+            float xIncrement = dx / (float)steps;
+            float yIncrement = dy / (float)steps;
+
+            float x = x0;
+            float y = y0;
+
+            for (int v = 0; v <= steps; v++)
+            {
+                Pset((int)Math.Round(x), (int)Math.Round(y), col);
+
+                x = x + xIncrement;
+                y = y + yIncrement;
+            }
         }
 
         public byte Pget(int? x, int? y)
@@ -113,17 +209,49 @@ namespace PicoUnity
             PokeScreen(real_x, real_y, memory.Peek(MemoryModule.ADDR_PEN_COLOR));
         }
 
+        public void Rect(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
+        {
+            Line(x0, y0, x1, y0, col);
+            Line(x0, y0, x0, y1, col);
+            Line(x1, y0, x1, y1, col);
+            Line(x0, y1, x1, y1, col);
+        }
+
+        public void Rectfill(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
+        {
+            int xMin = Math.Min(x0, x1);
+            int yMin = Math.Min(y0, y1);
+
+            int xMax = Math.Max(x0, x1);
+            int yMax = Math.Max(y0, y1);
+
+            for (int y = yMin; y <= yMax; y++)
+            {
+                if (y < 0 || y >= 128) continue;
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    if (x < 0 || x >= 128) continue;
+                    Pset(x, y, col);
+                }
+            }
+        }
+
         #endregion
 
         public override ApiTable GetApiTable()
         {
             return new ApiTable()
             {
-                { "cls",    (Action<int?>)             Cls },
-                { "color",  (Action<int?>)             Color },
-                { "cursor", (Action<int?, int?, int?>) Cursor },
-                { "pget",   (Func<int?, int?, byte>)   Pget },
-                { "pset",   (Action<int?, int?, int?>) Pset },
+                { "circ",     (Action<int?, int?, int, int?>)    Circ },
+                { "circfill", (Action<int?, int?, int, int?>)    Circfill },
+                { "cls",      (Action<int?>)                     Cls },
+                { "color",    (Action<int?>)                     Color },
+                { "cursor",   (Action<int?, int?, int?>)         Cursor },
+                { "line",     (Action<int, int, int, int, int?>) Line },
+                { "pget",     (Func<int?, int?, byte>)           Pget },
+                { "pset",     (Action<int?, int?, int?>)         Pset },
+                { "rect",     (Action<int, int, int, int, int?>) Rect },
+                { "rectfill", (Action<int, int, int, int, int?>) Rectfill },
             };
         }
     }
