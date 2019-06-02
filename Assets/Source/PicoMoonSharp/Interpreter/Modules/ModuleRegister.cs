@@ -33,7 +33,8 @@ namespace PicoMoonSharp.Interpreter
             if (modules.Has(CoreModules.ErrorHandling)) RegisterModuleType<ErrorHandlingModule>(table);
 			if (modules.Has(CoreModules.Coroutine)) RegisterModuleType<CoroutineModule>(table);
 			if (modules.Has(CoreModules.Dynamic)) RegisterModuleType<DynamicModule>(table);
-
+			if (modules.Has(CoreModules.PicoMath)) RegisterModuleType<PicoMathModule>(table);
+            
 			return table;
 		}
 

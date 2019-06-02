@@ -30,12 +30,13 @@ namespace PicoUnity
                 cartridge.Load();
                 emulator.LoadCartridge(cartridge);
             }
-
-            //Graphics test script
-            emulator.Run(@"
+            else
+            {
+                //Graphics test script
+                emulator.Run(@"
                 function _draw()
                     print('graphics test \130', 1, 1, 7)
-                    
+
                     for x = 1, 63, 2 do
                         pset(x, 7, 7)
                     end
@@ -57,7 +58,8 @@ namespace PicoUnity
                     rect(0 + o1, 127 - o1, 62 - o1, 63 + o1, 3)
                     rectfill(0 + o2, 127 - o2, 62 - o2, 63 + o2, 3)
                 end
-            ");
+                ");
+            }
         }
 
         private void Update()

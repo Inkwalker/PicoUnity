@@ -82,12 +82,13 @@ namespace FixedPointy {
             if (value < int.MinValue || value >= int.MaxValue + 1L)
                 throw new OverflowException();
 
-            int integer = (int)Math.Floor(value);
+            int sign = Math.Sign(value);
+            int integer = (int)value;
 
-            int fraction = (int)(FRACTION_RANGE * (value - integer)) & FRACTION_MASK;
-            fraction = integer < 0 ? -fraction : fraction;
+            int fraction = (int)(FRACTION_RANGE * (value - integer) * sign) & FRACTION_MASK;
+            fraction = sign < 0 ? -fraction : fraction;
 
-            return new Fix((integer << FRACTIONAL_BITS) + fraction);
+            return new Fix((integer << FRACTIONAL_BITS) | fraction);
         }
 
         public static explicit operator float (Fix value) {

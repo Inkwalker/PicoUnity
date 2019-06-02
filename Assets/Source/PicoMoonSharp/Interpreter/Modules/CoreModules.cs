@@ -30,10 +30,6 @@ namespace PicoMoonSharp.Interpreter
 		/// </summary>
 		Metatables = 0x4,
 		/// <summary>
-		/// The string package
-		/// </summary>
-		String = 0x8,
-		/// <summary>
 		/// The load methods: "load", "loadsafe", "loadfile", "loadfilesafe", "dofile" and "require"
 		/// </summary>
 		LoadMethods = 0x10,
@@ -48,27 +44,11 @@ namespace PicoMoonSharp.Interpreter
 		/// <summary>
 		/// The math package
 		/// </summary>
-		Math = 0x100,
+		PicoMath = 0x100,
 		/// <summary>
 		/// The coroutine package
 		/// </summary>
 		Coroutine = 0x200,
-		/// <summary>
-		/// The bit32 package
-		/// </summary>
-		Bit32 = 0x400,
-		/// <summary>
-		/// The time methods of the "os" package: "clock", "difftime", "date" and "time"
-		/// </summary>
-		OS_Time = 0x800,
-		/// <summary>
-		/// The methods of "os" package excluding those listed for OS_Time. These are not supported under Unity.
-		/// </summary>
-		OS_System = 0x1000,
-		/// <summary>
-		/// The methods of "io" and "file" packages. These are not supported under Unity.
-		/// </summary>
-		IO = 0x2000,
 		/// <summary>
 		/// The "debug" package (it has limited support)
 		/// </summary>
@@ -77,25 +57,21 @@ namespace PicoMoonSharp.Interpreter
 		/// The "dynamic" package (introduced by MoonSharp).
 		/// </summary>
 		Dynamic = 0x8000,
-		/// <summary>
-		/// The "json" package (introduced by MoonSharp).
-		/// </summary>
-		Json = 0x10000,
 
 
 		/// <summary>
 		/// A sort of "hard" sandbox preset, including string, math, table, bit32 packages, constants and table iterators.
 		/// </summary>
-		Preset_HardSandbox = GlobalConsts | TableIterators | String | Table | Basic | Math | Bit32,
+		Preset_HardSandbox = GlobalConsts | TableIterators | Table | Basic | PicoMath,
 		/// <summary>
 		/// A softer sandbox preset, adding metatables support, error handling, coroutine, time functions, json parsing and dynamic evaluations.
 		/// </summary>
-		Preset_SoftSandbox = Preset_HardSandbox | Metatables | ErrorHandling | Coroutine | OS_Time | Dynamic | Json,
+		Preset_SoftSandbox = Preset_HardSandbox | Metatables | ErrorHandling | Coroutine | Dynamic,
 		/// <summary>
 		/// The default preset. Includes everything except "debug" as now.
 		/// Beware that using this preset allows scripts unlimited access to the system.
 		/// </summary>
-		Preset_Default = Preset_SoftSandbox | LoadMethods | OS_System | IO,
+		Preset_Default = Preset_SoftSandbox | LoadMethods,
 		/// <summary>
 		/// The complete package.
 		/// Beware that using this preset allows scripts unlimited access to the system.
