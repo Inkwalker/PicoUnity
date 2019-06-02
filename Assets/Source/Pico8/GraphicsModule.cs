@@ -55,11 +55,21 @@ namespace PicoUnity
         public void Flip()
         {
             memory.CopyTo(buffer, MemoryModule.ADDR_VRAM, 0, MemoryModule.SIZE_VRAM);
+
+            //TODO: color mapping in shaders
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                byte lo = (byte)(buffer[i] & 0xf);
+                byte hi = (byte)(buffer[i] >> 4);
+                
+                buffer[i] = (byte)(GetScreenColor(hi) << 4 | GetScreenColor(lo));
+            }
+
             Texture.LoadRawTextureData(buffer);
             Texture.Apply();
         }
 
-        public void PokeScreen(int x, int y, byte color)
+        private void PokeScreen(int x, int y, byte color)
         {
             byte clip_x0 = memory.Peek(MemoryModule.ADDR_CLIP_X0);
             byte clip_x1 = memory.Peek(MemoryModule.ADDR_CLIP_X1);
@@ -69,6 +79,21 @@ namespace PicoUnity
             if (x < clip_x0 || y < clip_y0 || x > clip_x1 || y > clip_y1) return;
 
             memory.PokeHalf(MemoryModule.ADDR_VRAM, y * ScreenWidth + x, color);
+        }
+
+        private byte GetDrawColor(byte penColor)
+        {
+            return memory.PeekHalf(MemoryModule.ADDR_PALETTE_0 + penColor, 0);
+        }
+
+        private byte GetScreenColor(byte color)
+        {
+            return memory.PeekHalf(MemoryModule.ADDR_PALETTE_1 + color, 0);
+        }
+
+        private bool IsTransperent(byte color)
+        {
+            return memory.PeekHalf(MemoryModule.ADDR_PALETTE_0 + color, 1) > 0;
         }
 
         private int GetCharacterWidth(byte character)
@@ -263,8 +288,23 @@ namespace PicoUnity
 
             if (real_x < 0 || real_x >= ScreenWidth || real_y < 0 || real_y >= ScreenHeight) return;
 
-            //TODO: pal() support
-            PokeScreen(real_x, real_y, PenColor);
+            PokeScreen(real_x, real_y, GetDrawColor(PenColor));
+        }
+
+        public void Pal(byte? c0 = 0, byte? c1 = null, byte? p = 0)
+        {
+            if (c1.HasValue == false)
+            {
+                memory.Poke(MemoryModule.ADDR_PALETTE_0, 0x10);
+                for (byte i = 1; i < 16; i++)
+                {
+                    memory.Poke(MemoryModule.ADDR_PALETTE_0 + i, i);
+                }
+                return;
+            }
+
+            int addr = (p == 0) ? MemoryModule.ADDR_PALETTE_0 : MemoryModule.ADDR_PALETTE_1;
+            memory.PokeHalf(addr + (c0.Value & 0xf), 0, (byte)(c1.Value & 0xf));
         }
 
         public void Print(string str, int? x, int? y, int? col = null)
@@ -344,6 +384,7 @@ namespace PicoUnity
                 { "line",     (Action<int, int, int, int, int?>) Line },
                 { "pget",     (Func<int?, int?, byte>)           Pget },
                 { "pset",     (Action<int?, int?, int?>)         Pset },
+                { "pal",      (Action<byte?, byte?, byte?>)      Pal },
                 { "print",    (Action<string, int?, int?, int?>) Print },
                 { "rect",     (Action<int, int, int, int, int?>) Rect },
                 { "rectfill", (Action<int, int, int, int, int?>) Rectfill },
