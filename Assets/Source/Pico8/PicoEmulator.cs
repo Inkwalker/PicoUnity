@@ -54,5 +54,15 @@ namespace PicoUnity
 
             gpu.Flip();
         }
+
+        public void LoadCartridge(Cartridge cart)
+        {
+            memory.CopyFrom(cart.Rom, 0, 0, MemoryModule.ADDR_GENERAL);
+
+            var script = cart.ExtractScript();
+
+            Run(script);
+            Call("_init");
+        }
     }
 }

@@ -149,6 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5781e1318bbb8194baffe8b07f9e6d2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cartridge: {fileID: 0}
   screen: {fileID: 941677452}
   targetFrameRate: 30
 --- !u!4 &354680743

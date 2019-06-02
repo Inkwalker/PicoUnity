@@ -4,6 +4,7 @@ namespace PicoUnity
 {
     public class PicoUnityBehaviour : MonoBehaviour
     {
+        [SerializeField] Cartridge cartridge = default;
         [SerializeField] Renderer screen = default;
         [SerializeField] int targetFrameRate = 30;
 
@@ -19,10 +20,18 @@ namespace PicoUnity
             emulator = new PicoEmulator();
 
             screen.material.SetTexture("_MainTex", emulator.ScreenTexture);
+
         }
 
         private void Start()
         {
+            if (cartridge != null)
+            {
+                cartridge.Load();
+                emulator.LoadCartridge(cartridge);
+            }
+
+            //Graphics test script
             emulator.Run(@"
                 function _draw()
                     print('graphics test \130', 1, 1, 7)
