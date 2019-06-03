@@ -4,28 +4,30 @@ using System;
 namespace PicoUnity
 {
     [CreateAssetMenu(menuName = "PicoUnity/Cartridge")]
-    public class Cartridge : ScriptableObject
+    public class CartridgeTex : ACartridge
     {
-        const int ROM_SIZE = 0x8000;
-        const int META_SIZE = 0x5;
-        const int CART_SIZE = ROM_SIZE + META_SIZE;
-
         [SerializeField] Texture2D texture = default;
 
+        [SerializeField][HideInInspector]
         private byte[] rom;
+        [SerializeField][HideInInspector]
+        private string lua;
 
         public byte Version { get; private set; }
         public int Build { get; private set; }
-        public byte[] Rom => rom;
+        public override byte[] Rom => rom;
+        public override string Lua => lua;
 
-        private void OnEnable()
+        private void OnValidate()
         {
             rom = new byte[CART_SIZE];
-        }
+            lua = "";
 
-        public void Load()
-        {
-            LoadFromTexture(texture);
+            if (texture != null)
+            {
+                LoadFromTexture(texture);
+                lua = ExtractScript();
+            }
         }
 
         private static byte DecodeColor32(Color32 c)
