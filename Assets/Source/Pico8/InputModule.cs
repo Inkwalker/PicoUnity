@@ -20,7 +20,7 @@ namespace PicoUnity
             }
         }
 
-        private ushort? Btn(int? i, int? p = 0)
+        private object Btn(int? i, int? p = 0)
         {
             p = p.HasValue ? p : 0;
 
@@ -28,7 +28,7 @@ namespace PicoUnity
             {
                 var btn = p.Value == 0 ? player_0[i.Value] : player_1[i.Value];
 
-                return btn.State ? (byte?)1 : null;
+                return btn.State;
             }
             else
             {
@@ -47,7 +47,7 @@ namespace PicoUnity
             }
         }
 
-        private ushort? Btnp(int? i, int? p = 0)
+        private object Btnp(int? i, int? p = 0)
         {
             p = p.HasValue ? p : 0;
 
@@ -55,7 +55,7 @@ namespace PicoUnity
             {
                 var btn = p.Value == 0 ? player_0[i.Value] : player_1[i.Value];
 
-                return btn.Pressed ? (byte?)1 : null;
+                return btn.Pressed;
             }
             else
             {
@@ -78,8 +78,8 @@ namespace PicoUnity
         {
             return new ApiTable()
             {
-                {"btn", (Func<int?, int?, ushort?>) Btn },
-                {"btnp", (Func<int?, int?, ushort?>) Btnp }
+                {"btn", (Func<int?, int?, object>) Btn },
+                {"btnp", (Func<int?, int?, object>) Btnp }
             };
         }
 

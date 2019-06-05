@@ -296,6 +296,46 @@ namespace PicoUnity
 
             if (col.HasValue) Color(col.Value);
         }
+
+        public object Fget(int n = -1, byte? f = null)
+        {
+            if (n < 0 || n >= 256) return null;
+            byte flag = memory.Peek(MemoryModule.ADDR_FLAGS + n);
+            if (!f.HasValue)
+            {
+                return flag;
+            }
+            byte mask = (byte)(1 << f.Value);
+            return ((flag & mask) > 0);
+        }
+
+        public void Fset(int n = -1, byte? f = null, bool? val = null)
+        {
+            if (n < 0 || n >= 256) return;
+            if (!f.HasValue) return;
+            byte flag = 0;
+            if (val.HasValue)
+            {
+                flag = (byte)Fget(n);
+                if (val.Value)
+                {
+                    byte mask = (byte)(1 << f.Value);
+                    flag = (byte)(flag | mask);
+
+                }
+                else
+                {
+                    byte mask = (byte)(0 << f.Value);
+                    flag = (byte)(flag & mask);
+                }
+            }
+            else
+            {
+                flag = f.Value;
+            }
+            memory.Poke(MemoryModule.ADDR_FLAGS + n, (byte)flag);
+        }
+
         public void Line(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
         {
             //TODO: lineTo
@@ -510,6 +550,8 @@ namespace PicoUnity
                 { "camera",   (Action<int?, int?>)                            Camera },
                 { "color",    (Action<int?>)                                  Color },
                 { "cursor",   (Action<int?, int?, int?>)                      Cursor },
+                { "fget",     (Func<int, byte?, object>)                      Fget },
+                { "fset",     (Action<int, byte?, bool?>)                     Fset },
                 { "line",     (Action<int, int, int, int, int?>)              Line },
                 { "pget",     (Func<int?, int?, byte>)                        Pget },
                 { "pset",     (Action<int?, int?, int?>)                      Pset },
