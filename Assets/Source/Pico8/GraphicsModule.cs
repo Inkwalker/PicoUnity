@@ -52,6 +52,11 @@ namespace PicoUnity
             Flip();
         }
 
+        public override void OnFrameEnd(float dt)
+        {
+            Flip();
+        }
+
         public void Flip()
         {
             memory.CopyTo(buffer, MemoryModule.ADDR_VRAM, 0, MemoryModule.SIZE_VRAM);
@@ -309,6 +314,8 @@ namespace PicoUnity
 
         public void Print(string str, int? x, int? y, int? col = null)
         {
+            if (str == null) str = "";
+
             var chars = str.ToCharArray();
             var ascii = System.Array.ConvertAll(chars, c => (byte)c);
 

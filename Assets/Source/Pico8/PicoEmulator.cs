@@ -11,10 +11,14 @@ namespace PicoUnity
         private MemoryModule memory;
         private GraphicsModule gpu;
 
+        private List<EmulatorModule> modules;
+
         public Texture2D ScreenTexture => gpu.Texture;
 
         public PicoEmulator()
         {
+            modules = new List<EmulatorModule>();
+
             memory = new MemoryModule();
             memory.InitRam();
 
@@ -22,8 +26,15 @@ namespace PicoUnity
 
             luaEngine = new Script();
 
-            RegisterAPI( memory.GetApiTable() );
-            RegisterAPI( gpu.GetApiTable() );
+            AddModule(memory);
+            AddModule(gpu);
+        }
+
+        public void AddModule(EmulatorModule module)
+        {
+            modules.Add(module);
+
+            RegisterAPI(module.GetApiTable());
         }
 
         private void RegisterAPI(EmulatorModule.ApiTable api)
@@ -47,12 +58,20 @@ namespace PicoUnity
             luaEngine.DoString(script);
         }
 
-        public void Update()
+        public void Update(float dt)
         {
+            foreach (var module in modules)
+            {
+                module.OnFrameStart(dt);
+            }
+
             Call("_update");
             Call("_draw");
 
-            gpu.Flip();
+            foreach (var module in modules)
+            {
+                module.OnFrameEnd(dt);
+            }
         }
 
         public void LoadCartridge(ACartridge cart)

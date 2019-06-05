@@ -18,6 +18,7 @@ namespace PicoUnity
             frameTime = 1f / targetFrameRate;
 
             emulator = new PicoEmulator();
+            emulator.AddModule(new InputModule());
 
             screen.material.SetTexture("_MainTex", emulator.ScreenTexture);
 
@@ -35,17 +36,17 @@ namespace PicoUnity
         {
             if (timer >= frameTime)
             {
-                timer = 0;
+                EmulatorUpdate(timer);
 
-                EmulatorUpdate();
+                timer = 0;
             }
 
             timer += Time.deltaTime;
         }
 
-        private void EmulatorUpdate()
+        private void EmulatorUpdate(float dt)
         {
-            emulator.Update();
+            emulator.Update(dt);
         }
     }
 }

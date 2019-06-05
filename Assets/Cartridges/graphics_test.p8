@@ -9,6 +9,8 @@ function _update()
 end
 
 function _draw()
+  cls()
+
   print('graphics test \130', 1, 1, 7)
 
   for x = 1, 63, 2 do
