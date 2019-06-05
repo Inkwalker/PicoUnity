@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FixedPointy;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -377,24 +378,76 @@ namespace PicoUnity
             }
         }
 
+        public byte Sget(int x = 0, int y = 0)
+        {
+            return memory.PeekHalf(MemoryModule.ADDR_SPRITE, y * 128 + x);
+        }
+
+        public void Sset(int x = 0, int y = 0, byte c = 0)
+        {
+            memory.PokeHalf(MemoryModule.ADDR_SPRITE, y * 128 + x, 0);
+        }
+
+        public void Spr(int n, int x, int y, Fix? w, Fix? h, bool flip_x = false, bool flip_y = false)
+        {
+            w = w.HasValue ? w : 1;
+            h = h.HasValue ? h : 1;
+
+            // TODO: flip
+            int width = (int)(8 * w.Value);
+            int height = (int)(8 * h.Value);
+
+            int spr_x = (n % 16) * 8;
+            int spr_y = (n / 16) * 8;
+
+            for (int yy = 0; yy < height; yy++)
+            {
+                int screen_y = y + yy;// - CameraY;
+                int s_y = spr_y + yy;
+
+                if (screen_y < 0 || screen_y >= 128) continue;
+
+                for (int xx = 0; xx < width; xx++)
+                {
+                    int screen_x = x + xx;// - CameraX;
+
+                    if (screen_x < 0 || screen_x >= 128) continue;
+
+                    byte color = 0;
+
+                    int read_x = flip_x ? spr_x + (width - xx - 1)  : spr_x + xx;
+                    int read_y = flip_y ? spr_y + (height - yy - 1) : spr_y + yy;
+  
+                    color = Sget(read_x, read_y);
+
+                    if (IsTransperent(color)) continue;
+
+                    PokeScreen(screen_x, screen_y, GetDrawColor(color));
+                }
+            }
+        }
+
         #endregion
 
         public override ApiTable GetApiTable()
         {
             return new ApiTable()
             {
-                { "circ",     (Action<int?, int?, int, int?>)    Circ },
-                { "circfill", (Action<int?, int?, int, int?>)    Circfill },
-                { "cls",      (Action<int?>)                     Cls },
-                { "color",    (Action<int?>)                     Color },
-                { "cursor",   (Action<int?, int?, int?>)         Cursor },
-                { "line",     (Action<int, int, int, int, int?>) Line },
-                { "pget",     (Func<int?, int?, byte>)           Pget },
-                { "pset",     (Action<int?, int?, int?>)         Pset },
-                { "pal",      (Action<byte?, byte?, byte?>)      Pal },
-                { "print",    (Action<string, int?, int?, int?>) Print },
-                { "rect",     (Action<int, int, int, int, int?>) Rect },
-                { "rectfill", (Action<int, int, int, int, int?>) Rectfill },
+                { "circ",     (Action<int?, int?, int, int?>)                 Circ },
+                { "circfill", (Action<int?, int?, int, int?>)                 Circfill },
+                { "cls",      (Action<int?>)                                  Cls },
+                { "color",    (Action<int?>)                                  Color },
+                { "cursor",   (Action<int?, int?, int?>)                      Cursor },
+                { "line",     (Action<int, int, int, int, int?>)              Line },
+                { "pget",     (Func<int?, int?, byte>)                        Pget },
+                { "pset",     (Action<int?, int?, int?>)                      Pset },
+                { "pal",      (Action<byte?, byte?, byte?>)                   Pal },
+                { "print",    (Action<string, int?, int?, int?>)              Print },
+                { "rect",     (Action<int, int, int, int, int?>)              Rect },
+                { "rectfill", (Action<int, int, int, int, int?>)              Rectfill },
+                { "sget",     (Func<int, int, byte>)                          Sget },
+                { "sset",     (Action<int, int, byte>)                        Sset },
+                { "spr",      (Action<int, int, int, Fix?, Fix?, bool, bool>) Spr },
             };
         }
     }

@@ -76,7 +76,7 @@ namespace PicoUnity
         {
             string delimiter;
 
-            lua = ReadSection(reader, out delimiter);
+            lua = ReadSection(reader, out delimiter, true);
 
             if (lua == null) lua = "";
 
@@ -87,7 +87,7 @@ namespace PicoUnity
         {
             string delimiter;
 
-            string gfx = ReadSection(reader, out delimiter);
+            string gfx = ReadSection(reader, out delimiter, false);
 
             if (string.IsNullOrEmpty(gfx) == false)
             {
@@ -107,7 +107,7 @@ namespace PicoUnity
         {
             string delimiter;
 
-            string gff = ReadSection(reader, out delimiter);
+            string gff = ReadSection(reader, out delimiter, false);
 
             if (string.IsNullOrEmpty(gff) == false)
             {
@@ -127,7 +127,7 @@ namespace PicoUnity
         {
             string delimiter;
 
-            string label = ReadSection(reader, out delimiter);
+            string label = ReadSection(reader, out delimiter, false);
 
             return delimiter;
         }
@@ -136,7 +136,7 @@ namespace PicoUnity
         {
             string delimiter;
 
-            string map = ReadSection(reader, out delimiter);
+            string map = ReadSection(reader, out delimiter,false);
 
             if (string.IsNullOrEmpty(map) == false)
             {
@@ -158,7 +158,7 @@ namespace PicoUnity
 
             string delimiter;
 
-            string sfx = ReadSection(reader, out delimiter);
+            string sfx = ReadSection(reader, out delimiter, false);
 
             return delimiter;
         }
@@ -169,19 +169,22 @@ namespace PicoUnity
             //TODO
             string delimiter;
 
-            string music = ReadSection(reader, out delimiter);
+            string music = ReadSection(reader, out delimiter, false);
 
             return delimiter;
         }
 
-        private string ReadSection(StringReader reader, out string delimiter)
+        private string ReadSection(StringReader reader, out string delimiter, bool keepFormating)
         {
             string line = reader.ReadLine();
 
             StringBuilder builder = new StringBuilder();
             while (line != null && !delimiters.Contains(line))
             {
-                builder.AppendLine(line);
+                if (keepFormating)
+                    builder.AppendLine(line);
+                else
+                    builder.Append(line);
                 line = reader.ReadLine();
             }
 
