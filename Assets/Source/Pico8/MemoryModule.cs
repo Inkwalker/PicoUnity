@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FixedPointy;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -189,10 +190,13 @@ namespace PicoUnity
             return (short)(((sbyte)ram[addr + 1] << 8) | ram[addr]);
         }
 
-        public int Peek4(int addr)
+        public Fix Peek4(int addr)
         {
             if (addr < 0 || addr + 3 >= SIZE_TOTAL) return 0;
-            return ((sbyte)ram[addr + 3] << 24) | (ram[addr + 2] << 16) | (ram[addr + 1] << 8) | ram[addr];
+
+            int raw = ((sbyte)ram[addr + 3] << 24) | (ram[addr + 2] << 16) | (ram[addr + 1] << 8) | ram[addr];
+
+            return new Fix(raw);
         }
 
         public void Poke(int addr, byte val)
@@ -211,12 +215,14 @@ namespace PicoUnity
             Poke(addr + 1, (byte)(val >> 8));
         }
 
-        public void Poke4(int addr, int val)
+        public void Poke4(int addr, Fix val)
         {
-            Poke(addr, (byte)(val & 0xff));
-            Poke(addr + 1, (byte)((val >> 8) & 0xff));
-            Poke(addr + 2, (byte)((val >> 16) & 0xff));
-            Poke(addr + 3, (byte)((val >> 24) & 0xff));
+            int raw = val.Raw;
+
+            Poke(addr,     (byte)(raw & 0xff));
+            Poke(addr + 1, (byte)((raw >> 8) & 0xff));
+            Poke(addr + 2, (byte)((raw >> 16) & 0xff));
+            Poke(addr + 3, (byte)((raw >> 24) & 0xff));
         }
 
         public void MemSet(int start, byte val, int len)
@@ -249,10 +255,10 @@ namespace PicoUnity
             {
                 { "peek",   (Func<int, byte>)        Peek },
                 { "peek2",  (Func<int, short>)       Peek2 },
-                { "peek4",  (Func<int, int>)         Peek4 },
+                { "peek4",  (Func<int, Fix>)         Peek4 },
                 { "poke",   (Action<int, byte>)      Poke },
                 { "poke2",  (Action<int, short>)     Poke2 },
-                { "poke4",  (Action<int, int>)       Poke4 },
+                { "poke4",  (Action<int, Fix>)       Poke4 },
                 { "memcpy", (Action<int, int, int>)  MemCpy },
                 { "memset", (Action<int, byte, int>) MemSet },
             };

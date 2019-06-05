@@ -26,8 +26,12 @@ namespace PicoUnity
 
             luaEngine = new Script();
 
+            var storage = new PersistentDataStorage(memory);
+            memory.AddMemoryListener(storage);
+
             AddModule(memory);
             AddModule(gpu);
+            AddModule(storage);
         }
 
         public void AddModule(EmulatorModule module)

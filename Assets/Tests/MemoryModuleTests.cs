@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using FixedPointy;
 using NUnit.Framework;
 using PicoUnity;
 using UnityEngine;
@@ -48,14 +49,14 @@ namespace Tests
             var mem = new MemoryModule();
             mem.InitRam();
 
-            int writeValNeg = -214748364;
-            int writeValPos = 214748364;
+            Fix writeValNeg = (Fix)(-354.245);
+            Fix writeValPos = (Fix)325.246;
 
-            mem.Poke4(MemoryModule.ADDR_GENERAL, writeValNeg);
+            mem.Poke4(MemoryModule.ADDR_GENERAL,     writeValNeg);
             mem.Poke4(MemoryModule.ADDR_GENERAL + 4, writeValPos);
 
-            int readValNeg = mem.Peek4(MemoryModule.ADDR_GENERAL);
-            int readValPos = mem.Peek4(MemoryModule.ADDR_GENERAL + 4);
+            Fix readValNeg = mem.Peek4(MemoryModule.ADDR_GENERAL);
+            Fix readValPos = mem.Peek4(MemoryModule.ADDR_GENERAL + 4);
 
             Assert.AreEqual(writeValNeg, readValNeg);
             Assert.AreEqual(writeValPos, readValPos);
