@@ -80,6 +80,7 @@ namespace PicoUnity
             ram[ADDR_PALETTE_1] = 0;
             ram[ADDR_CLIP_X1] = 127;
             ram[ADDR_CLIP_Y1] = 127;
+            ram[ADDR_PEN_COLOR] = 6;
             for (byte i = 1; i < 16; i++)
             {
                 ram[ADDR_PALETTE_0 + i] = i;

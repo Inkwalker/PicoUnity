@@ -18,6 +18,18 @@ namespace PicoUnity
 
         #region Draw State
 
+        private int CameraX
+        {
+            get => memory.Peek2(MemoryModule.ADDR_CAMERA_X);
+            set => memory.Poke2(MemoryModule.ADDR_CAMERA_X, (short)value);
+        }
+
+        private int CameraY
+        {
+            get => memory.Peek2(MemoryModule.ADDR_CAMERA_Y);
+            set => memory.Poke2(MemoryModule.ADDR_CAMERA_Y, (short)value);
+        }
+
         private byte CursorX
         {
             get => memory.Peek(MemoryModule.ADDR_CURSOR_X);
@@ -28,6 +40,30 @@ namespace PicoUnity
         {
             get => memory.Peek(MemoryModule.ADDR_CURSOR_Y);
             set => memory.Poke(MemoryModule.ADDR_CURSOR_Y, value);
+        }
+
+        private byte ClipX0
+        {
+            get => memory.Peek(MemoryModule.ADDR_CLIP_X0);
+            set => memory.Poke(MemoryModule.ADDR_CLIP_X0, value);
+        }
+
+        private byte ClipX1
+        {
+            get => memory.Peek(MemoryModule.ADDR_CLIP_X1);
+            set => memory.Poke(MemoryModule.ADDR_CLIP_X1, value);
+        }
+
+        private byte ClipY0
+        {
+            get => memory.Peek(MemoryModule.ADDR_CLIP_Y0);
+            set => memory.Poke(MemoryModule.ADDR_CLIP_Y0, value);
+        }
+
+        private byte ClipY1
+        {
+            get => memory.Peek(MemoryModule.ADDR_CLIP_Y1);
+            set => memory.Poke(MemoryModule.ADDR_CLIP_Y1, value);
         }
 
         public byte PenColor
@@ -140,6 +176,15 @@ namespace PicoUnity
 
         #region Pico8 API
 
+        public void Camera(int? x = 0, int? y = 0)
+        {
+            x = x.HasValue ? x : 0;
+            y = y.HasValue ? y : 0;
+
+            CameraX = x.Value;
+            CameraY = y.Value;
+        }
+
         public void Circ(int? x0 = null, int? y0 = null, int r = 4, int? col = null)
         {
             if (r < 0) return;
@@ -210,7 +255,6 @@ namespace PicoUnity
 
         public void Cls(int? col = 0)
         {
-            //TODO: pal() support
             col = col.HasValue ? col : 0;
 
             byte color = (byte)(col.Value & 0xf);
@@ -218,6 +262,21 @@ namespace PicoUnity
             memory.MemSet(MemoryModule.ADDR_VRAM, val, MemoryModule.SIZE_VRAM);
 
             Cursor();
+        }
+
+        public void Clip(int x = 0, int y = 0, int w = 127, int h = 127)
+        {
+            int x1 = x + w;
+            int y1 = y + h;
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+            if (x1 >= 128) x1 = 127;
+            if (y1 >= 128) y1 = 127;
+
+            ClipX0 = (byte)x;
+            ClipX1 = (byte)x1;
+            ClipY0 = (byte)y;
+            ClipY1 = (byte)y1;
         }
 
         public void Color(int? col = 0)
@@ -271,9 +330,8 @@ namespace PicoUnity
             x = x.HasValue ? x : 0;
             y = y.HasValue ? y : 0;
 
-            //TODO: camera position
-            int real_x = x.Value;
-            int real_y = y.Value;
+            int real_x = x.Value - CameraX;
+            int real_y = y.Value - CameraY;
 
             if (real_x < 0 || real_x >= ScreenWidth || real_y < 0 || real_y >= ScreenHeight) return 0;
 
@@ -285,14 +343,13 @@ namespace PicoUnity
             x = x.HasValue ? x : 0;
             y = y.HasValue ? y : 0;
 
-            //TODO: camera position
-            int real_x = x.Value;
-            int real_y = y.Value;
+            int real_x = x.Value - CameraX;
+            int real_y = y.Value - CameraY;
 
             if (col.HasValue)
                 Color(col.Value);
 
-            if (real_x < 0 || real_x >= ScreenWidth || real_y < 0 || real_y >= ScreenHeight) return;
+            if (real_x < ClipX0 || real_x > ClipX1 || real_y < ClipY0 || real_y > ClipY1) return;
 
             PokeScreen(real_x, real_y, GetDrawColor(PenColor));
         }
@@ -417,16 +474,14 @@ namespace PicoUnity
 
             for (int yy = 0; yy < height; yy++)
             {
-                int screen_y = y + yy;// - CameraY;
+                int draw_y = y + yy;
                 int s_y = spr_y + yy;
 
-                if (screen_y < 0 || screen_y >= 128) continue;
+                if (draw_y < 0 || draw_y >= 128) continue;
 
                 for (int xx = 0; xx < width; xx++)
                 {
-                    int screen_x = x + xx;// - CameraX;
-
-                    if (screen_x < 0 || screen_x >= 128) continue;
+                    int draw_x = x + xx;
 
                     byte color = 0;
 
@@ -437,7 +492,7 @@ namespace PicoUnity
 
                     if (IsTransperent(color)) continue;
 
-                    PokeScreen(screen_x, screen_y, GetDrawColor(color));
+                    Pset(draw_x, draw_y, color);
                 }
             }
         }
@@ -451,6 +506,8 @@ namespace PicoUnity
                 { "circ",     (Action<int?, int?, int, int?>)                 Circ },
                 { "circfill", (Action<int?, int?, int, int?>)                 Circfill },
                 { "cls",      (Action<int?>)                                  Cls },
+                { "clip",     (Action<int, int, int, int>)                    Clip },
+                { "camera",   (Action<int?, int?>)                            Camera },
                 { "color",    (Action<int?>)                                  Color },
                 { "cursor",   (Action<int?, int?, int?>)                      Cursor },
                 { "line",     (Action<int, int, int, int, int?>)              Line },
