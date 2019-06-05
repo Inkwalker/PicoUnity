@@ -313,6 +313,21 @@ namespace PicoUnity
             memory.PokeHalf(addr + (c0.Value & 0xf), 0, (byte)(c1.Value & 0xf));
         }
 
+        public void Palt(byte c = 0, bool? t = false)
+        {
+            if (!t.HasValue)
+            {
+                memory.PokeHalf(MemoryModule.ADDR_PALETTE_0, 1, 1);
+                for (byte i = 1; i < 16; i++)
+                {
+                    memory.PokeHalf(MemoryModule.ADDR_PALETTE_0 + i, 1, 0);
+                }
+                return;
+            }
+
+            memory.PokeHalf(MemoryModule.ADDR_PALETTE_0 + (c & 0xf), 1, (byte)(t.Value ? 1 : 0));
+        }
+
         public void Print(string str, int? x, int? y, int? col = null)
         {
             if (str == null) str = "";
@@ -442,6 +457,7 @@ namespace PicoUnity
                 { "pget",     (Func<int?, int?, byte>)                        Pget },
                 { "pset",     (Action<int?, int?, int?>)                      Pset },
                 { "pal",      (Action<byte?, byte?, byte?>)                   Pal },
+                { "palt",     (Action<byte, bool?>)                           Palt },
                 { "print",    (Action<string, int?, int?, int?>)              Print },
                 { "rect",     (Action<int, int, int, int, int?>)              Rect },
                 { "rectfill", (Action<int, int, int, int, int?>)              Rectfill },
