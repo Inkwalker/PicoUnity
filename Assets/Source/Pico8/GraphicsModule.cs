@@ -174,6 +174,11 @@ namespace PicoUnity
             }
         }
 
+        private float MapValue(float val, float in_min, float in_max, float out_min, float out_max)
+        {
+            return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        }
+
         #region Pico8 API
 
         public void Camera(int? x = 0, int? y = 0)
@@ -516,19 +521,45 @@ namespace PicoUnity
             {
                 int draw_y = y + yy;
                 int s_y = spr_y + yy;
-
-                if (draw_y < 0 || draw_y >= 128) continue;
+                int read_y = flip_y ? spr_y + (height - yy - 1) : spr_y + yy;
 
                 for (int xx = 0; xx < width; xx++)
                 {
                     int draw_x = x + xx;
-
-                    byte color = 0;
-
                     int read_x = flip_x ? spr_x + (width - xx - 1)  : spr_x + xx;
-                    int read_y = flip_y ? spr_y + (height - yy - 1) : spr_y + yy;
   
-                    color = Sget(read_x, read_y);
+                    byte color = Sget(read_x, read_y);
+
+                    if (IsTransperent(color)) continue;
+
+                    Pset(draw_x, draw_y, color);
+                }
+            }
+        }
+
+        public void Sspr(int sx, int sy, int sw, int sh, int dx, int dy, int? dw, int? dh, bool flip_x = false, bool flip_y = false)
+        {
+            //TODO: flip
+
+            int dest_w = dw.HasValue ? dw.Value : sw;
+            int dest_h = dh.HasValue ? dh.Value : sh;
+
+            if (dest_w == 0 || dest_h == 0) return;
+
+            for (int yy = 0; yy < dest_h; yy++)
+            {
+                int draw_y = dy + yy;
+
+                int map_y = (int)MapValue(yy, 0, dest_h, 0, sh);
+                int sprite_y = flip_y ? sy + (sh - map_y - 1) : sy + map_y;
+
+                for (int xx = 0; xx < dest_w; xx++)
+                {
+                    int draw_x = dx + xx;
+                    int map_x = (int)MapValue(xx, 0, dest_w, 0, sw);
+                    int sprite_x = flip_x ? sx + (sw - map_x - 1) : sx + map_x;
+
+                    byte color = Sget(sprite_x, sprite_y);
 
                     if (IsTransperent(color)) continue;
 
@@ -563,6 +594,7 @@ namespace PicoUnity
                 { "sget",     (Func<int, int, byte>)                          Sget },
                 { "sset",     (Action<int, int, byte>)                        Sset },
                 { "spr",      (Action<int, int, int, Fix?, Fix?, bool, bool>) Spr },
+                { "sspr",     (Action<int, int, int, int, int, int, int?, int?, bool, bool>) Sspr },
             };
         }
     }
