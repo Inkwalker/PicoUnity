@@ -29,7 +29,6 @@ namespace PicoMoonSharp.Interpreter
 			if (modules.Has(CoreModules.Metatables)) RegisterModuleType<MetaTableModule>(table);
 			if (modules.Has(CoreModules.LoadMethods)) RegisterModuleType<LoadModule>(table);
             if (modules.Has(CoreModules.Table)) RegisterModuleType<TableModule>(table);
-            if (modules.Has(CoreModules.Table)) RegisterModuleType<TableModule_Globals>(table);
             if (modules.Has(CoreModules.ErrorHandling)) RegisterModuleType<ErrorHandlingModule>(table);
 			if (modules.Has(CoreModules.Coroutine)) RegisterModuleType<CoroutineModule>(table);
 			if (modules.Has(CoreModules.Dynamic)) RegisterModuleType<DynamicModule>(table);

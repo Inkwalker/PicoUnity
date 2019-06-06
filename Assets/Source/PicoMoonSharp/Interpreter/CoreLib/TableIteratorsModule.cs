@@ -10,30 +10,28 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 	[MoonSharpModule]
 	public class TableIteratorsModule
 	{
-		// ipairs (t)
-		// -------------------------------------------------------------------------------------------------------------------
-		// If t has a metamethod __ipairs, calls it with t as argument and returns the first three results from the call.
-		// Otherwise, returns three values: an iterator function, the table t, and 0, so that the construction
-		//	  for i,v in ipairs(t) do body end
-		// will iterate over the pairs (1,t[1]), (2,t[2]), ..., up to the first integer key absent from the table. 
-		[MoonSharpModuleMethod]
-		public static DynValue ipairs(ScriptExecutionContext executionContext, CallbackArguments args) 
-		{
-			DynValue table = args[0];
+        [MoonSharpModuleMethod(Name = "foreach")]
+        public static DynValue _foreach(ScriptExecutionContext executionContext, CallbackArguments args)
+        {
+            DynValue table = args.AsType(0, "next", DataType.Table);
+            DynValue func = args.AsType(1, "foreach", DataType.Function);
 
-			DynValue meta = executionContext.GetMetamethodTailCall(table, "__ipairs", args.GetArray());
+            foreach (var item in table.Table.Values)
+            {
+                func.Function.Call(item);
+            }
 
-			return meta ?? DynValue.NewTuple(DynValue.NewCallback(__next_i), table, DynValue.NewNumber(0));
-		}
+            return DynValue.Nil;
+        }
 
-		// pairs (t)
-		// -------------------------------------------------------------------------------------------------------------------
-		// If t has a metamethod __pairs, calls it with t as argument and returns the first three results from the call.
-		// Otherwise, returns three values: the next function, the table t, and nil, so that the construction
-		//     for k,v in pairs(t) do body end
-		// will iterate over all key–value pairs of table t.
-		// See function next for the caveats of modifying the table during its traversal. 
-		[MoonSharpModuleMethod]
+        // pairs (t)
+        // -------------------------------------------------------------------------------------------------------------------
+        // If t has a metamethod __pairs, calls it with t as argument and returns the first three results from the call.
+        // Otherwise, returns three values: the next function, the table t, and nil, so that the construction
+        //     for k,v in pairs(t) do body end
+        // will iterate over all key–value pairs of table t.
+        // See function next for the caveats of modifying the table during its traversal. 
+        [MoonSharpModuleMethod]
 		public static DynValue pairs(ScriptExecutionContext executionContext, CallbackArguments args) 
 		{
 			DynValue table = args[0];
@@ -43,19 +41,53 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 			return meta ?? DynValue.NewTuple(DynValue.NewCallback(next), table);
 		}
 
-		// next (table [, index])
-		// -------------------------------------------------------------------------------------------------------------------
-		// Allows a program to traverse all fields of a table. Its first argument is a table and its second argument is an 
-		// index in this table. next returns the next index of the table and its associated value. 
-		// When called with nil as its second argument, next returns an initial index and its associated value. 
-		// When called with the last index, or with nil in an empty table, next returns nil. If the second argument is absent, 
-		// then it is interpreted as nil. In particular, you can use next(t) to check whether a table is empty.
-		// The order in which the indices are enumerated is not specified, even for numeric indices. 
-		// (To traverse a table in numeric order, use a numerical for.)
-		// The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. 
-		// You may however modify existing fields. In particular, you may clear existing fields. 
-		[MoonSharpModuleMethod]
-		public static DynValue next(ScriptExecutionContext executionContext, CallbackArguments args) 
+        [MoonSharpModuleMethod]
+        public static DynValue all(ScriptExecutionContext executionContext, CallbackArguments args)
+        {
+            DynValue table = args[0];
+
+            DynValue index = DynValue.Nil;
+
+            return DynValue.NewTuple(DynValue.NewCallback(
+                (c, a) =>
+                {
+                    DynValue t = a.AsType(0, "!!next_i!!", DataType.Table);
+
+                    var pair = t.Table.NextKey(index);
+
+                    index = pair.Value.Key;
+                    var val = pair.Value.Value;
+
+                    while (index.IsNotNil())
+                    {
+                        if (val.IsNil())
+                        {
+                            pair = t.Table.NextKey(index);
+                            index = pair.Value.Key;
+                        }
+                        else
+                        {
+                            return val;
+                        }
+                    }
+
+                    return DynValue.Nil;
+                }
+                ), table);
+        }
+
+        // next (table [, index])
+        // -------------------------------------------------------------------------------------------------------------------
+        // Allows a program to traverse all fields of a table. Its first argument is a table and its second argument is an 
+        // index in this table. next returns the next index of the table and its associated value. 
+        // When called with nil as its second argument, next returns an initial index and its associated value. 
+        // When called with the last index, or with nil in an empty table, next returns nil. If the second argument is absent, 
+        // then it is interpreted as nil. In particular, you can use next(t) to check whether a table is empty.
+        // The order in which the indices are enumerated is not specified, even for numeric indices. 
+        // (To traverse a table in numeric order, use a numerical for.)
+        // The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. 
+        // You may however modify existing fields. In particular, you may clear existing fields. 
+        public static DynValue next(ScriptExecutionContext executionContext, CallbackArguments args) 
 		{
 			DynValue table = args.AsType(0, "next", DataType.Table);
 			DynValue index = args[1];
@@ -77,16 +109,22 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 			DynValue index = args.AsType(1, "!!next_i!!", DataType.Number);
 
 			int idx = ((int)index.Number) + 1;
-			DynValue val = table.Table.Get(idx);
-			
-			if (val.Type != DataType.Nil)
-			{
-				return DynValue.NewTuple(DynValue.NewNumber(idx), val);
-			}
-			else
-			{
-				return DynValue.Nil;
-			}
+
+            while (idx <= table.Table.Length)
+            {
+                DynValue val = table.Table.Get(idx);
+
+                if (val.Type == DataType.Nil)
+                {
+                    idx = idx + 1;
+                }
+                else
+                {
+                    return DynValue.NewTuple(DynValue.NewNumber(idx), val);
+                }
+            }
+
+            return DynValue.Nil;
 		}
 	}
 }
