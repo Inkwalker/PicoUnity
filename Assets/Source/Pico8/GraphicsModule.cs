@@ -123,21 +123,28 @@ namespace PicoUnity
             Texture.Apply();
         }
 
-        private void PokeScreen(int x, int y, byte color)
-        {
-            byte clip_x0 = memory.Peek(MemoryModule.ADDR_CLIP_X0);
-            byte clip_x1 = memory.Peek(MemoryModule.ADDR_CLIP_X1);
-            byte clip_y0 = memory.Peek(MemoryModule.ADDR_CLIP_Y0);
-            byte clip_y1 = memory.Peek(MemoryModule.ADDR_CLIP_Y1);
-
-            if (x < clip_x0 || y < clip_y0 || x > clip_x1 || y > clip_y1) return;
-
-            memory.PokeHalf(MemoryModule.ADDR_VRAM, y * ScreenWidth + x, color);
-        }
-
         private byte GetDrawColor(byte penColor)
         {
-            return memory.PeekHalf(MemoryModule.ADDR_PALETTE_0 + penColor, 0);
+            int col = penColor & 0xf;
+            return memory.PeekHalf(MemoryModule.ADDR_PALETTE_0 + col, 0);
+        }
+
+        private int GetPatternColor(int x, int y, byte penColor)
+        {
+            x = x % 4;
+            y = y % 4;
+
+            x = x < 0 ? -x : 3 - x;
+            y = y < 0 ? -y : 3 - y;
+
+            int i = y * 4 + x;
+            int bit = memory.Peek2(MemoryModule.ADDR_FILL) >> i & 1;
+            bool transparent = memory.Peek(MemoryModule.ADDR_FILL_T) > 0;
+
+            if (bit > 0) penColor = (byte)(penColor >> 4);
+            else if (transparent) return -1;
+
+            return GetDrawColor(penColor);
         }
 
         private byte GetScreenColor(byte color)
@@ -145,7 +152,7 @@ namespace PicoUnity
             return memory.PeekHalf(MemoryModule.ADDR_PALETTE_1 + color, 0);
         }
 
-        private bool IsTransperent(byte color)
+        private bool IsTransparent(byte color)
         {
             return memory.PeekHalf(MemoryModule.ADDR_PALETTE_0 + color, 1) > 0;
         }
@@ -156,6 +163,11 @@ namespace PicoUnity
             if (character < 128) return FontWidth; //normal characters;
 
             return FontWidth * 2; // double charactes
+        }
+
+        private float MapValue(float val, float in_min, float in_max, float out_min, float out_max)
+        {
+            return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
         }
 
         private void DrawCharacter(int x, int y, byte character)
@@ -180,15 +192,10 @@ namespace PicoUnity
 
                     if (c.grayscale > 0.5f)
                     {
-                        Pset(x + xx, y + yy, null);
+                        DrawPixel(x + xx, y + yy, GetDrawColor(PenColor));
                     }
                 }
             }
-        }
-
-        private float MapValue(float val, float in_min, float in_max, float out_min, float out_max)
-        {
-            return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
         }
 
         private void DrawLine(int x0, int y0, int x1, int y1, int? color = null)
@@ -216,6 +223,21 @@ namespace PicoUnity
                 x = x + xIncrement;
                 y = y + yIncrement;
             }
+        }
+
+        private void DrawPixel(int x, int y, byte color)
+        {
+            byte clip_x0 = memory.Peek(MemoryModule.ADDR_CLIP_X0);
+            byte clip_x1 = memory.Peek(MemoryModule.ADDR_CLIP_X1);
+            byte clip_y0 = memory.Peek(MemoryModule.ADDR_CLIP_Y0);
+            byte clip_y1 = memory.Peek(MemoryModule.ADDR_CLIP_Y1);
+
+            int screen_x = x - CameraX;
+            int screen_y = y - CameraY;
+
+            if (screen_x < clip_x0 || screen_y < clip_y0 || screen_x > clip_x1 || screen_y > clip_y1) return;
+
+            memory.PokeHalf(MemoryModule.ADDR_VRAM, screen_y * ScreenWidth + screen_x, color);
         }
 
         #region Pico8 API
@@ -327,7 +349,7 @@ namespace PicoUnity
         {
             col = col.HasValue ? col : 0;
 
-            PenColor = (byte)(col.Value & 0xf);
+            PenColor = (byte)col.Value;
         }
 
         public void Cursor(int? x = 0, int? y = 0, int? col = null)
@@ -339,6 +361,22 @@ namespace PicoUnity
             CursorY = (byte)y.Value;
 
             if (col.HasValue) Color(col.Value);
+        }
+
+        public void Fillp(Fix? pat = null)
+        {
+            if (pat.HasValue == false)
+            {
+                memory.Poke2(MemoryModule.ADDR_FILL, 0);
+                memory.Poke(MemoryModule.ADDR_FILL_T, 0);
+                return;
+            }
+
+            int p = (int)pat.Value;
+            int t = pat.Value.Raw & 1;
+
+            memory.Poke2(MemoryModule.ADDR_FILL, (short)p);
+            memory.Poke(MemoryModule.ADDR_FILL_T, (byte)t);
         }
 
         public object Fget(int n = -1, byte? f = null)
@@ -415,15 +453,16 @@ namespace PicoUnity
             x = x.HasValue ? x : 0;
             y = y.HasValue ? y : 0;
 
-            int real_x = x.Value - CameraX;
-            int real_y = y.Value - CameraY;
+            int screen_x = x.Value - CameraX;
+            int screen_y = y.Value - CameraY;
 
             if (col.HasValue)
                 Color(col.Value);
 
-            if (real_x < ClipX0 || real_x > ClipX1 || real_y < ClipY0 || real_y > ClipY1) return;
+            var color = GetPatternColor(x.Value, y.Value, PenColor);
 
-            PokeScreen(real_x, real_y, GetDrawColor(PenColor));
+            if (color > 0)
+                DrawPixel(screen_x, screen_y, (byte)color);
         }
 
         public void Pal(byte? c0 = 0, byte? c1 = null, byte? p = 0)
@@ -513,10 +552,8 @@ namespace PicoUnity
 
             for (int y = yMin; y <= yMax; y++)
             {
-                if (y < 0 || y >= 128) continue;
                 for (int x = xMin; x <= xMax; x++)
                 {
-                    if (x < 0 || x >= 128) continue;
                     Pset(x, y, col);
                 }
             }
@@ -556,9 +593,9 @@ namespace PicoUnity
   
                     byte color = Sget(read_x, read_y);
 
-                    if (IsTransperent(color)) continue;
+                    if (IsTransparent(color)) continue;
 
-                    Pset(draw_x, draw_y, color);
+                    DrawPixel(draw_x, draw_y, GetDrawColor(color));
                 }
             }
         }
@@ -585,9 +622,9 @@ namespace PicoUnity
 
                     byte color = Sget(sprite_x, sprite_y);
 
-                    if (IsTransperent(color)) continue;
+                    if (IsTransparent(color)) continue;
 
-                    Pset(draw_x, draw_y, color);
+                    DrawPixel(draw_x, draw_y, GetDrawColor(color));
                 }
             }
         }
@@ -664,6 +701,7 @@ namespace PicoUnity
                 { "camera",   (Action<int?, int?>)                            Camera },
                 { "color",    (Action<int?>)                                  Color },
                 { "cursor",   (Action<int?, int?, int?>)                      Cursor },
+                { "fillp",    (Action<Fix?>)                                  Fillp },
                 { "fget",     (Func<int, byte?, object>)                      Fget },
                 { "fset",     (Action<int, byte?, bool?>)                     Fset },
                 { "line",     (Action<int, int, int?, int?, int?>)            Line },

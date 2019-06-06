@@ -26,18 +26,24 @@ function _draw()
   circ(95, 31, 31, 8)
   circfill(95, 31, 23, 2)
 
-  pal(3, 12)
-  pal(2, 14, 1)
+  --pal(3, 12)
+  --pal(2, 14, 1)
 
   o1 = 4
   o2 = 8
+  o3 = 16
   rect(0 + o1, 127 - o1, 62 - o1, 63 + o1, 3)
-  rectfill(0 + o2, 127 - o2, 62 - o2, 63 + o2, 3)
 
-  line(10, 117, 52, 117, 1);
-  line(52, 73)
-  line(10, 73)
-  line(10, 117)
+  rectfill(0 + o3, 127 - o3, 62 - o3, 63 + o3, 7)
+
+  fillp(0b0011011011000110.1)
+  rectfill(0 + o2, 127 - o2, 62 - o2, 63 + o2, 0xb3)
+  fillp()
+
+  line(8, 119, 54, 119, 7);
+  line(54, 71)
+  line(8, 71)
+  line(8, 119)
 
   rectfill(4, 9, 38, 43, 1)
   spr(0, 5, 10, 2, 2, false, false)

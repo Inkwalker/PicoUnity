@@ -36,6 +36,7 @@ namespace PicoUnity
             ADDR_PALETTE_LOCK = 0x5f2e,
             ADDR_CANCEL_PAUSE = 0x5f30,
             ADDR_FILL = 0x5f31,
+            ADDR_FILL_T = 0x5f33,
             ADDR_PRO_COLOR = 0x5f34,
             ADDR_LINE_X = 0x5f3c,
             ADDR_LINE_Y = 0x5f3e,
