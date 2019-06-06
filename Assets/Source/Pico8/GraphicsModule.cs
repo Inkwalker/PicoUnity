@@ -539,8 +539,6 @@ namespace PicoUnity
 
         public void Sspr(int sx, int sy, int sw, int sh, int dx, int dy, int? dw, int? dh, bool flip_x = false, bool flip_y = false)
         {
-            //TODO: flip
-
             int dest_w = dw.HasValue ? dw.Value : sw;
             int dest_h = dh.HasValue ? dh.Value : sh;
 
@@ -566,6 +564,65 @@ namespace PicoUnity
                     Pset(draw_x, draw_y, color);
                 }
             }
+        }
+
+        public void Map(int celx = 0, int cely = 0, int sx = 0, int sy = 0, int celw = 16, int celh = 16, int layer = 0)
+        {
+            int cel_y1 = cely + celh;
+            int cel_x1 = celx + celw;
+            for (int cy_i = cely; cy_i < cel_y1; cy_i++)
+            {
+                if (cy_i < 0 || cy_i >= 64) continue;
+                int map_offset = MemoryModule.ADDR_MAP;
+                int cy = cy_i;
+                if (cy_i >= 32)
+                {
+                    map_offset = MemoryModule.ADDR_SHARED;
+                    cy -= 32;
+                }
+                for (int cx = celx; cx < cel_x1; cx++)
+                {
+                    if (cx < 0 || cx >= 128) continue;
+                    int mem_offset = map_offset + cy * 128 + cx;
+                    int spr_n = memory.Peek(mem_offset);
+
+                    if (spr_n == 0) continue;
+
+                    byte flag = (byte)Fget(spr_n);
+                    if ((flag & layer) != layer)
+                    {
+                        continue;
+                    }
+                    Spr(spr_n, sx + (cx - celx) * 8, sy + (cy_i - cely) * 8, 1, 1);
+                }
+            }
+        }
+
+        public byte Mget(int x = 0, int y = 0)
+        {
+            if (x < 0 || x >= 128 || y < 0 || y >= 128) return 0;
+            int map_offset = MemoryModule.ADDR_MAP;
+            if (y >= 32)
+            {
+                map_offset = MemoryModule.ADDR_SHARED;
+                y -= 32;
+            }
+            int mem_offset = map_offset + y * 128 + x;
+            byte spr = memory.Peek(mem_offset);
+            return spr;
+        }
+
+        public void Mset(int x = 0, int y = 0, byte v = 0)
+        {
+            if (x < 0 || x >= 128 || y < 0 || y >= 128) return;
+            int map_offset = MemoryModule.ADDR_MAP;
+            if (y >= 32)
+            {
+                map_offset = MemoryModule.ADDR_SHARED;
+                y -= 32;
+            }
+            int mem_offset = map_offset + y * 128 + x;
+            memory.Poke(mem_offset, v);
         }
 
         #endregion
@@ -595,6 +652,9 @@ namespace PicoUnity
                 { "sset",     (Action<int, int, byte>)                        Sset },
                 { "spr",      (Action<int, int, int, Fix?, Fix?, bool, bool>) Spr },
                 { "sspr",     (Action<int, int, int, int, int, int, int?, int?, bool, bool>) Sspr },
+                { "map",      (Action<int, int, int, int, int, int, int>)     Map },
+                { "mget",     (Func<int, int, byte>)                          Mget },
+                { "mset",     (Action<int, int, byte>)                        Mset },
             };
         }
     }
