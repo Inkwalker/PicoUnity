@@ -34,6 +34,11 @@ function _draw()
   rect(0 + o1, 127 - o1, 62 - o1, 63 + o1, 3)
   rectfill(0 + o2, 127 - o2, 62 - o2, 63 + o2, 3)
 
+  line(10, 117, 52, 117, 1);
+  line(52, 73)
+  line(10, 73)
+  line(10, 117)
+
   rectfill(4, 9, 38, 43, 1)
   spr(0, 5, 10, 2, 2, false, false)
   spr(0, 22, 10, 2, 2, true, false)

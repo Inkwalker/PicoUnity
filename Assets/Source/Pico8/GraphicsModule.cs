@@ -66,10 +66,22 @@ namespace PicoUnity
             set => memory.Poke(MemoryModule.ADDR_CLIP_Y1, value);
         }
 
-        public byte PenColor
+        private byte PenColor
         {
             get => memory.Peek(MemoryModule.ADDR_PEN_COLOR);
             set => memory.Poke(MemoryModule.ADDR_PEN_COLOR, value);
+        }
+
+        private int LineX
+        {
+            get => memory.Peek2(MemoryModule.ADDR_LINE_X);
+            set => memory.Poke2(MemoryModule.ADDR_LINE_X, (short)value);
+        }
+
+        private int LineY
+        {
+            get => memory.Peek2(MemoryModule.ADDR_LINE_Y);
+            set => memory.Poke2(MemoryModule.ADDR_LINE_Y, (short)value);
         }
 
         #endregion
@@ -179,6 +191,33 @@ namespace PicoUnity
             return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
         }
 
+        private void DrawLine(int x0, int y0, int x1, int y1, int? color = null)
+        {
+            int dx = x1 - x0;
+            int dy = y1 - y0;
+
+            int steps;
+
+            if (Math.Abs(dx) > Math.Abs(dy))
+                steps = Math.Abs(dx);
+            else
+                steps = Math.Abs(dy);
+
+            float xIncrement = dx / (float)steps;
+            float yIncrement = dy / (float)steps;
+
+            float x = x0;
+            float y = y0;
+
+            for (int v = 0; v <= steps; v++)
+            {
+                Pset((int)Math.Round(x), (int)Math.Round(y), color);
+
+                x = x + xIncrement;
+                y = y + yIncrement;
+            }
+        }
+
         #region Pico8 API
 
         public void Camera(int? x = 0, int? y = 0)
@@ -239,10 +278,10 @@ namespace PicoUnity
 
             do
             {
-                Line(x0.Value - x, y0.Value + y, x0.Value + x, y0.Value + y, col);
-                Line(x0.Value - y, y0.Value + x, x0.Value + y, y0.Value + x, col);
-                Line(x0.Value - x, y0.Value - y, x0.Value + x, y0.Value - y, col);
-                Line(x0.Value - y, y0.Value - x, x0.Value + y, y0.Value - x, col);
+                DrawLine(x0.Value - x, y0.Value + y, x0.Value + x, y0.Value + y, col);
+                DrawLine(x0.Value - y, y0.Value + x, x0.Value + y, y0.Value + x, col);
+                DrawLine(x0.Value - x, y0.Value - y, x0.Value + x, y0.Value - y, col);
+                DrawLine(x0.Value - y, y0.Value - x, x0.Value + y, y0.Value - x, col);
 
                 if (d < 0)
                 {
@@ -341,33 +380,21 @@ namespace PicoUnity
             memory.Poke(MemoryModule.ADDR_FLAGS + n, (byte)flag);
         }
 
-        public void Line(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
+        public void Line(int x0 = 0, int y0 = 0, int? x1 = null, int? y1 = null, int? col = null)
         {
-            //TODO: lineTo
-
-            int dx = x1 - x0;
-            int dy = y1 - y0;
-
-            int steps;
-
-            if (Math.Abs(dx) > Math.Abs(dy))
-                steps = Math.Abs(dx);
-            else
-                steps = Math.Abs(dy);
-
-            float xIncrement = dx / (float)steps;
-            float yIncrement = dy / (float)steps;
-
-            float x = x0;
-            float y = y0;
-
-            for (int v = 0; v <= steps; v++)
+            if (!x1.HasValue || !y1.HasValue)
             {
-                Pset((int)Math.Round(x), (int)Math.Round(y), col);
+                x1 = x0;
+                y1 = y0;
 
-                x = x + xIncrement;
-                y = y + yIncrement;
+                x0 = LineX;
+                y0 = LineY;
             }
+
+            LineX = x1.Value;
+            LineY = y1.Value;
+
+            DrawLine(x0, y0, x1.Value, y1.Value, col);
         }
 
         public byte Pget(int? x, int? y)
@@ -470,10 +497,10 @@ namespace PicoUnity
 
         public void Rect(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
         {
-            Line(x0, y0, x1, y0, col);
-            Line(x0, y0, x0, y1, col);
-            Line(x1, y0, x1, y1, col);
-            Line(x0, y1, x1, y1, col);
+            DrawLine(x0, y0, x1, y0, col);
+            DrawLine(x0, y0, x0, y1, col);
+            DrawLine(x1, y0, x1, y1, col);
+            DrawLine(x0, y1, x1, y1, col);
         }
 
         public void Rectfill(int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int? col = null)
@@ -510,7 +537,6 @@ namespace PicoUnity
             w = w.HasValue ? w : 1;
             h = h.HasValue ? h : 1;
 
-            // TODO: flip
             int width = (int)(8 * w.Value);
             int height = (int)(8 * h.Value);
 
@@ -640,7 +666,7 @@ namespace PicoUnity
                 { "cursor",   (Action<int?, int?, int?>)                      Cursor },
                 { "fget",     (Func<int, byte?, object>)                      Fget },
                 { "fset",     (Action<int, byte?, bool?>)                     Fset },
-                { "line",     (Action<int, int, int, int, int?>)              Line },
+                { "line",     (Action<int, int, int?, int?, int?>)            Line },
                 { "pget",     (Func<int?, int?, byte>)                        Pget },
                 { "pset",     (Action<int?, int?, int?>)                      Pset },
                 { "pal",      (Action<byte?, byte?, byte?>)                   Pal },
