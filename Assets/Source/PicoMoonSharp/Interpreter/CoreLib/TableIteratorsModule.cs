@@ -2,6 +2,8 @@
 #pragma warning disable 1591
 
 
+using System.Collections.Generic;
+
 namespace PicoMoonSharp.Interpreter.CoreLib
 {
 	/// <summary>
@@ -16,7 +18,9 @@ namespace PicoMoonSharp.Interpreter.CoreLib
             DynValue table = args.AsType(0, "next", DataType.Table);
             DynValue func = args.AsType(1, "foreach", DataType.Function);
 
-            foreach (var item in table.Table.Values)
+            var values = new List<DynValue>(table.Table.Values);
+
+            foreach (var item in values)
             {
                 func.Function.Call(item);
             }

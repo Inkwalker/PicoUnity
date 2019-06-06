@@ -64,7 +64,23 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 			return DynValue.Nil;
 		}
 
-		private static int GetTableLength(ScriptExecutionContext executionContext, DynValue vlist)
+        [MoonSharpModuleMethod]
+        public static DynValue count(ScriptExecutionContext executionContext, CallbackArguments args)
+        {
+            DynValue table = args.AsType(0, "count", DataType.Table, false);
+
+            int c = 0;
+
+            foreach (var item in table.Table.Values)
+            {
+                if (item.IsNotNil()) c++;
+            }
+
+            return DynValue.NewNumber(c);
+        }
+
+
+        private static int GetTableLength(ScriptExecutionContext executionContext, DynValue vlist)
 		{
 			DynValue __len = executionContext.GetMetamethod(vlist, "__len");
 

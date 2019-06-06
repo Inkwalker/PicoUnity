@@ -33,14 +33,17 @@ namespace Tests
             Script script = new Script();
 
             var str = @"
-                x = { 10, 8, 5 }
-                del(x, 8)
-                return x[2]
+                a={1,10,2,11,3,12}
+			    for item in all(a) do
+				    if (item < 10) then del(a, item) end
+			    end
+
+                return a[2]
             ";
 
             var result = script.DoString(str);
 
-            Assert.AreEqual((Fix)5, result.Number);
+            Assert.AreEqual((Fix)11, result.Number);
         }
 
         [Test]
@@ -104,6 +107,22 @@ namespace Tests
             var result = script.DoString(str);
 
             Assert.AreEqual((Fix)28, result.Number);
+        }
+
+        [Test]
+        public void Count()
+        {
+            Script script = new Script();
+
+            var str = @"
+                t = {3, 10, nil, 15}
+
+                return count(t)
+            ";
+
+            var result = script.DoString(str);
+
+            Assert.AreEqual((Fix)3, result.Number);
         }
     }
 }
