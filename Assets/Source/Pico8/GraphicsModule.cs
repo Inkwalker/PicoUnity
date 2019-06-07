@@ -131,18 +131,22 @@ namespace PicoUnity
 
         private int GetPatternColor(int x, int y, byte penColor)
         {
-            x = x % 4;
-            y = y % 4;
+            int fillPattern = memory.Peek2(MemoryModule.ADDR_FILL);
+            if (fillPattern != 0)
+            {
+                x = x % 4;
+                y = y % 4;
 
-            x = x < 0 ? -x : 3 - x;
-            y = y < 0 ? -y : 3 - y;
+                x = x < 0 ? -x : 3 - x;
+                y = y < 0 ? -y : 3 - y;
 
-            int i = y * 4 + x;
-            int bit = memory.Peek2(MemoryModule.ADDR_FILL) >> i & 1;
-            bool transparent = memory.Peek(MemoryModule.ADDR_FILL_T) > 0;
+                int i = y * 4 + x;
+                int bit = fillPattern >> i & 1;
+                bool transparent = memory.Peek(MemoryModule.ADDR_FILL_T) > 0;
 
-            if (bit > 0) penColor = (byte)(penColor >> 4);
-            else if (transparent) return -1;
+                if (bit > 0) penColor = (byte)(penColor >> 4);
+                else if (transparent) return -1;
+            }
 
             return GetDrawColor(penColor);
         }
@@ -453,16 +457,13 @@ namespace PicoUnity
             x = x.HasValue ? x : 0;
             y = y.HasValue ? y : 0;
 
-            int screen_x = x.Value - CameraX;
-            int screen_y = y.Value - CameraY;
-
             if (col.HasValue)
                 Color(col.Value);
 
             var color = GetPatternColor(x.Value, y.Value, PenColor);
 
             if (color > 0)
-                DrawPixel(screen_x, screen_y, (byte)color);
+                DrawPixel(x.Value, y.Value, (byte)color);
         }
 
         public void Pal(byte? c0 = 0, byte? c1 = null, byte? p = 0)
@@ -569,13 +570,10 @@ namespace PicoUnity
             memory.PokeHalf(MemoryModule.ADDR_SPRITE, y * 128 + x, 0);
         }
 
-        public void Spr(int n, int x, int y, Fix? w, Fix? h, bool flip_x = false, bool flip_y = false)
+        public void Spr(int n = 0, int x = 0, int y = 0, double w = 1, double h = 1, bool flip_x = false, bool flip_y = false)
         {
-            w = w.HasValue ? w : 1;
-            h = h.HasValue ? h : 1;
-
-            int width = (int)(8 * w.Value);
-            int height = (int)(8 * h.Value);
+            int width = (int)(8 * w);
+            int height = (int)(8 * h);
 
             int spr_x = (n % 16) * 8;
             int spr_y = (n / 16) * 8;
@@ -714,7 +712,7 @@ namespace PicoUnity
                 { "rectfill", (Action<int, int, int, int, int?>)              Rectfill },
                 { "sget",     (Func<int, int, byte>)                          Sget },
                 { "sset",     (Action<int, int, byte>)                        Sset },
-                { "spr",      (Action<int, int, int, Fix?, Fix?, bool, bool>) Spr },
+                { "spr",      (Action<int, int, int, double, double, bool, bool>) Spr },
                 { "sspr",     (Action<int, int, int, int, int, int, int?, int?, bool, bool>) Sspr },
                 { "map",      (Action<int, int, int, int, int, int, int>)     Map },
                 { "mget",     (Func<int, int, byte>)                          Mget },
