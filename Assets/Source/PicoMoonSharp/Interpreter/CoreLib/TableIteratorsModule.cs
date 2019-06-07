@@ -22,7 +22,7 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 
             foreach (var item in values)
             {
-                func.Function.Call(item);
+                if (item.IsNotNil()) func.Function.Call(item);
             }
 
             return DynValue.Nil;
