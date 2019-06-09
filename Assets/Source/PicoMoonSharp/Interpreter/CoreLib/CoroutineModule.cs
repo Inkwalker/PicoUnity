@@ -6,42 +6,23 @@ using System.Collections.Generic;
 namespace PicoMoonSharp.Interpreter.CoreLib
 {
 	/// <summary>
-	/// Class implementing coroutine Lua functions 
+	/// Class implementing Pico8 coroutine functions 
 	/// </summary>
-	[MoonSharpModule(Namespace = "coroutine")]
 	public class CoroutineModule
 	{
 		[MoonSharpModuleMethod]
-		public static DynValue create(ScriptExecutionContext executionContext, CallbackArguments args)
+		public static DynValue cocreate(ScriptExecutionContext executionContext, CallbackArguments args)
 		{
 			if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
-				args.AsType(0, "create", DataType.Function); // this throws
+				args.AsType(0, "cocreate", DataType.Function); // this throws
 
 			return executionContext.GetScript().CreateCoroutine(args[0]);
 		}
 
 		[MoonSharpModuleMethod]
-		public static DynValue wrap(ScriptExecutionContext executionContext, CallbackArguments args)
+		public static DynValue coresume(ScriptExecutionContext executionContext, CallbackArguments args)
 		{
-			if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
-				args.AsType(0, "wrap", DataType.Function); // this throws
-
-			DynValue v = create(executionContext, args);
-			DynValue c = DynValue.NewCallback(__wrap_wrapper);
-			c.Callback.AdditionalData = v;
-			return c;
-		}
-
-		public static DynValue __wrap_wrapper(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			DynValue handle = (DynValue)executionContext.AdditionalData;
-			return handle.Coroutine.Resume(args.GetArray());
-		}
-
-		[MoonSharpModuleMethod]
-		public static DynValue resume(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			DynValue handle = args.AsType(0, "resume", DataType.Thread);
+			DynValue handle = args.AsType(0, "coresume", DataType.Thread);
 
 			try
 			{
@@ -88,18 +69,10 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 		}
 
 
-
 		[MoonSharpModuleMethod]
-		public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments args)
+		public static DynValue costatus(ScriptExecutionContext executionContext, CallbackArguments args)
 		{
-			Coroutine C = executionContext.GetCallingCoroutine();
-			return DynValue.NewTuple(DynValue.NewCoroutine(C), DynValue.NewBoolean(C.State == CoroutineState.Main));
-		}
-
-		[MoonSharpModuleMethod]
-		public static DynValue status(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			DynValue handle = args.AsType(0, "status", DataType.Thread);
+			DynValue handle = args.AsType(0, "costatus", DataType.Thread);
 			Coroutine running = executionContext.GetCallingCoroutine();
 			CoroutineState cs = handle.Coroutine.State;
 
@@ -107,9 +80,7 @@ namespace PicoMoonSharp.Interpreter.CoreLib
 			{
 				case CoroutineState.Main:
 				case CoroutineState.Running:
-					return (handle.Coroutine == running) ?
-						DynValue.NewString("running") :
-						DynValue.NewString("normal");
+                    return DynValue.NewString("running");
 				case CoroutineState.NotStarted:
 				case CoroutineState.Suspended:
 				case CoroutineState.ForceSuspended:

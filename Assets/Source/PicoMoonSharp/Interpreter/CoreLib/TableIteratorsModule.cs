@@ -15,7 +15,7 @@ namespace PicoMoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod(Name = "foreach")]
         public static DynValue _foreach(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            DynValue table = args.AsType(0, "next", DataType.Table);
+            DynValue table = args.AsType(0, "foreach", DataType.Table);
             DynValue func = args.AsType(1, "foreach", DataType.Function);
 
             var values = new List<DynValue>(table.Table.Values);
