@@ -5,10 +5,11 @@ using System.Collections.Generic;
 
 namespace PicoMoonSharp.Interpreter.CoreLib
 {
-	/// <summary>
-	/// Class implementing Pico8 coroutine functions 
-	/// </summary>
-	public class CoroutineModule
+    /// <summary>
+    /// Class implementing Pico8 coroutine functions 
+    /// </summary>
+    [MoonSharpModule]
+    public class CoroutineModule
 	{
 		[MoonSharpModuleMethod]
 		public static DynValue cocreate(ScriptExecutionContext executionContext, CallbackArguments args)

@@ -10,6 +10,7 @@ namespace PicoUnity
         private Script luaEngine;
         private MemoryModule memory;
         private GraphicsModule gpu;
+        private AudioModule audio;
 
         private List<EmulatorModule> modules;
 
@@ -24,6 +25,8 @@ namespace PicoUnity
 
             gpu = new GraphicsModule(memory, "pico8");
 
+            audio = new AudioModule(memory, AudioSettings.outputSampleRate);
+
             luaEngine = new Script();
 
             var storage = new PersistentDataStorage(memory);
@@ -32,6 +35,7 @@ namespace PicoUnity
             AddModule(memory);
             AddModule(gpu);
             AddModule(storage);
+            AddModule(audio);
         }
 
         public void AddModule(EmulatorModule module)
@@ -76,6 +80,11 @@ namespace PicoUnity
             {
                 module.OnFrameEnd(dt);
             }
+        }
+
+        public void FillAudioBuffer(float[] data, int channels)
+        {
+            audio.FillBuffer(data, channels);
         }
 
         public void LoadCartridge(ACartridge cart)

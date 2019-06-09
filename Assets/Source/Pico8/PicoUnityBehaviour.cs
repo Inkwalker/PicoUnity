@@ -12,6 +12,7 @@ namespace PicoUnity
 
         private float frameTime;
         private float timer;
+        private bool initialized;
 
         private void Awake()
         {
@@ -22,6 +23,7 @@ namespace PicoUnity
 
             screen.material.SetTexture("_MainTex", emulator.ScreenTexture);
 
+            initialized = true;
         }
 
         private void Start()
@@ -42,11 +44,18 @@ namespace PicoUnity
             }
 
             timer += Time.deltaTime;
+
         }
 
         private void EmulatorUpdate(float dt)
         {
             emulator.Update(dt);
+        }
+
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            if (initialized)
+                emulator.FillAudioBuffer(data, channels);
         }
     }
 }
