@@ -1,5 +1,4 @@
-﻿using PicoUnity;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -140,12 +139,15 @@ namespace PicoUnity
 
             if (string.IsNullOrEmpty(map) == false)
             {
-                for (int i = 0; i < map.Length; i += 2)
+                if (string.IsNullOrEmpty(map) == false)
                 {
-                    byte hi = HexToByte(map[i]);
-                    byte lo = HexToByte(map[i + 1]);
+                    for (int i = 0; i < map.Length; i += 2)
+                    {
+                        byte hi = HexToByte(map[i]);
+                        byte lo = HexToByte(map[i + 1]);
 
-                    rom[MemoryModule.ADDR_MAP + i / 2] = (byte)(hi << 4 | lo);
+                        rom[MemoryModule.ADDR_MAP + i / 2] = (byte)(hi << 4 | lo);
+                    }
                 }
             }
 
@@ -154,11 +156,58 @@ namespace PicoUnity
 
         private string ReadSfx(StringReader reader)
         {
-            //TODO
-
             string delimiter;
 
-            string sfx = ReadSection(reader, out delimiter, false);
+            string section = ReadSection(reader, out delimiter, true);
+
+            using (var sfxReader = new StringReader(section))
+            {
+                var sfx = sfxReader.ReadLine();
+
+                int sfx_i = 0;
+                while(sfx != null)
+                {
+                    int sfx_addr = MemoryModule.ADDR_SOUND + sfx_i * 68;
+
+                    var editorMode   = ReadByte(sfx, 0);
+                    var noteDuration = ReadByte(sfx, 2);
+                    var loopStart    = ReadByte(sfx, 4);
+                    var loopEnd      = ReadByte(sfx, 6);
+
+                    for (int n = 0; n < 32; n++)
+                    {
+                        int i = 8 + n * 5;
+
+                        var pitch    = ReadByte(sfx, i);
+                        var waveform = HexToByte(sfx[i + 2]);
+                        var volume   = HexToByte(sfx[i + 3]);
+                        var effect   = HexToByte(sfx[i + 4]);
+
+                        int bin = 0;
+                        bin |= pitch & 0b111111;
+                        bin |= (waveform & 0b111) << 6;
+                        bin |= (volume & 0b111) << 9;
+                        bin |= (effect & 0b111) << 12;
+                        bin |= (waveform & 0b1000) << 15; //custom waveform
+
+                        byte lo = (byte)(bin & 0xFF);
+                        byte hi = (byte)(bin >> 8);
+
+                        int addr = sfx_addr + n * 2;
+
+                        Rom[addr]     = lo;
+                        Rom[addr + 1] = hi;
+                    }
+
+                    Rom[sfx_addr + 64] = editorMode;
+                    Rom[sfx_addr + 65] = noteDuration;
+                    Rom[sfx_addr + 66] = loopStart;
+                    Rom[sfx_addr + 67] = loopEnd;
+
+                    sfx_i++;
+                    sfx = sfxReader.ReadLine();
+                }
+            }
 
             return delimiter;
         }
@@ -195,6 +244,8 @@ namespace PicoUnity
 
         private byte HexToByte(char digit)
         {
+            digit = char.ToLower(digit);
+
             switch (digit)
             {
                 case '0': return 0;
@@ -217,6 +268,16 @@ namespace PicoUnity
                 default:
                     return 0;
             }
+        }
+
+        private byte ReadByte(string str, int offset)
+        {
+            byte hi = HexToByte(str[offset]);
+            byte lo = HexToByte(str[offset + 1]);
+
+            var b = (byte)(hi << 4 | lo);
+
+            return b;
         }
     }
 }
