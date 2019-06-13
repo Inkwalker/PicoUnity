@@ -1,25 +1,32 @@
-﻿namespace PicoUnity
+﻿using System.Collections.Generic;
+
+namespace PicoUnity
 {
     internal class SfxChannel
     {
         private int       sfxPointer = -1;
         private int       sfxOffset;
-        private float     time;
-        private AudioNote note;
+        private double    time;
         private float     noteLength;
 
         private MemoryModule mem;
+
+        private Oscillator oscillator;
 
         public bool IsPlaying => sfxPointer > 0;
 
         public SfxChannel(MemoryModule mem)
         {
             this.mem = mem;
+
+            oscillator = new Oscillator(new AudioNote() { hz = 440 });
         }
 
         public void Sfx(int n, int offset = 0, int length = 0)
         {
             if (n < 0) return;
+
+            oscillator.Stop();
 
             sfxPointer = MemoryModule.ADDR_SOUND + 68 * n;
             sfxOffset = offset;
@@ -34,7 +41,9 @@
             byte lo = mem.Peek(noteAddr);
             byte hi = mem.Peek(noteAddr + 1);
 
-            note = AudioNote.Decode(lo, hi);
+            var note = AudioNote.Decode(lo, hi);
+
+            oscillator.Reset(note);
         }
 
         private void StepNode()
@@ -51,17 +60,22 @@
             }
         }
 
-        public float Sample(float delta)
+        public float Sample(double delta)
         {
             if (sfxPointer < 0) return 0;
 
-            time += delta;
-            float t =  time - time % 1 / 22050f;
-            float result = AudioSynth.PlayNote(note, t);
+            time = (time + delta) % 10;
 
-            if (time > noteLength) StepNode();
+            if (time > noteLength)
+            {
+                oscillator.Stop();
+            }
+            if (oscillator.Stopped)
+            {
+                StepNode();
+            }
 
-            return result;
+            return oscillator.Sample(delta);
         }
     }
 }

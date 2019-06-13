@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using UnityEngine;
 
 namespace PicoUnity
 {
     public class AudioModule : EmulatorModule
     {
         private SfxChannel[] channels;
-        private float sampleDelta;
+        private double sampleDelta;
         private float gain = 0.5f;
 
         public AudioModule(MemoryModule memory, int sampleRate)
@@ -19,7 +19,7 @@ namespace PicoUnity
                 channels[i] = new SfxChannel(memory);
             }
 
-            sampleDelta = 1f / sampleRate;
+            sampleDelta = 1d / sampleRate;
         }
 
         public void Music(int n, int fade_ms = 0, int channelmask = 0)
@@ -73,9 +73,10 @@ namespace PicoUnity
                     sample += gain * this.channels[c].Sample(sampleDelta);
                 }
 
-                data[i] = sample;
-
-                if (channels == 2) data[i + 1] = data[i];
+                for (int j = 0; j < channels; j++)
+                {
+                    data[i + j] = sample;
+                }
             }
         }
     }

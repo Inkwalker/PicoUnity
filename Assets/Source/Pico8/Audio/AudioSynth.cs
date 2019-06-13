@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace PicoUnity
 {
@@ -6,12 +7,12 @@ namespace PicoUnity
     {
         private static System.Random rnd = new System.Random();
 
-        public static float PlayNote(AudioNote note, float time)
+        public static double PlayNote(AudioNote note, double time)
         {
-            return (note.volume / 7f) * Oscillate((Waveform)note.waveform, time, note.hz);
+            return (note.volume / 7d) * Oscillate((Waveform)note.waveform, time, note.hz);
         }
 
-        public static float Oscillate(Waveform waveform, float time, float hz)
+        public static double Oscillate(Waveform waveform, double time, float hz)
         {
             switch (waveform)
             {
@@ -35,47 +36,47 @@ namespace PicoUnity
             return 0;
         }
 
-        public static float Tri(float x)
+        public static double Tri(double x)
         {
-            return (Mathf.Abs((x % 1) * 2 - 1) * 2 - 1) * 0.5f;
+            return (Math.Abs(((x + 0.25) % 1) * 2 - 1) * 2 - 1) * 0.5d;
         }
 
-        public static float TiltedTri(float x)
+        public static double TiltedTri(double x)
         {
-            float t = x % 1;
-            return (((t < 0.875f) ? (t * 16 / 7) : ((1 - t) * 16)) - 1) * 0.5f;
+            double t = (x + 0.45) % 1;
+            return (((t < 0.875d) ? (t * 16 / 7) : ((1 - t) * 16)) - 1) * 0.5d;
         }
 
-        public static float Saw(float x)
+        public static double Saw(double x)
         {
-            return (x % 1 - 0.5f) * 2 / 3f;
+            return ((x + 0.5) % 1 - 0.5d) * 2 / 3d;
         }
 
-        public static float Square(float x)
+        public static double Square(double x)
         {
-            return ((x % 1 < 0.5f) ? 1 : -1) * 0.25f;
+            return ((x % 1 < 0.5d) ? 1 : -1) * 0.25d;
         }
 
-        public static float Pulse(float x)
+        public static double Pulse(double x)
         {
-            return ((x % 1 < 0.3125f) ? 1 : -1) * 0.25f;
+            return ((x % 1 < 0.3125d) ? 1 : -1) * 0.25d;
         }
 
-        public static float Organ(float x)
+        public static double Organ(double x)
         {
-            x = x * 4;
-            return (Mathf.Abs((x % 2) - 1) - 0.5f + (Mathf.Abs(((x * 0.5f) % 2) - 1) - 0.5f) / 2 - 0.1f) * 0.5f;
+            x = x * 4 + 1.8;
+            return (Math.Abs((x % 2) - 1) - 0.5d + (Math.Abs(((x * 0.5d) % 2) - 1) - 0.5d) / 2 - 0.1d) * 0.5d;
         }
 
-        public static float Noise(float x)
+        public static double Noise(double x)
         {
-            return (float)(rnd.NextDouble() * 2 - 1) * 0.5f;
+            return (rnd.NextDouble() * 2 - 1) * 0.5d;
         }
 
-        public static float Phaser(float x)
+        public static double Phaser(double x)
         {
-            x = x * 2;
-            return (Mathf.Abs(((x * 127 / 128) % 2) - 1) / 2f + Mathf.Abs((x % 2) - 1) - 1) * 2 / 3f;
+            x = x * 2 + 0.35;
+            return (Math.Abs(((x * 127 / 128) % 2) - 1) / 2d + Math.Abs((x % 2) - 1) - 1) * 2 / 3d;
         }
 
         public enum Waveform
