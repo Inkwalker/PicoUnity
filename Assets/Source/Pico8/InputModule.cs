@@ -86,12 +86,12 @@ namespace PicoUnity
         public override void OnFrameStart(float dt)
         {
             var p0_btn = new bool[8];
-            p0_btn[0] = Input.GetKey(KeyCode.LeftArrow);
-            p0_btn[1] = Input.GetKey(KeyCode.RightArrow);
-            p0_btn[2] = Input.GetKey(KeyCode.UpArrow);
-            p0_btn[3] = Input.GetKey(KeyCode.DownArrow);
-            p0_btn[4] = Input.GetKey(KeyCode.Z) || Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.N);
-            p0_btn[5] = Input.GetKey(KeyCode.X) || Input.GetKey(KeyCode.V) || Input.GetKey(KeyCode.M);
+            p0_btn[0] = Input.GetAxis("Horizontal") < -0.3f;
+            p0_btn[1] = Input.GetAxis("Horizontal") > 0.3f;
+            p0_btn[2] = Input.GetAxis("Vertical") > 0.3f;
+            p0_btn[3] = Input.GetAxis("Vertical") < -0.3f;
+            p0_btn[4] = Input.GetKey(KeyCode.Z) || Input.GetKey(KeyCode.C) || Input.GetKey(KeyCode.N) || Input.GetButton("Fire1");
+            p0_btn[5] = Input.GetKey(KeyCode.X) || Input.GetKey(KeyCode.V) || Input.GetKey(KeyCode.M) || Input.GetButton("Fire2");
 
             var p1_btn = new bool[8];
             p1_btn[0] = Input.GetKey(KeyCode.S);
