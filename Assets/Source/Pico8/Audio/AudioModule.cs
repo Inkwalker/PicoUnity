@@ -28,8 +28,6 @@ namespace PicoUnity
 
         public void Sfx(int n, int channel = -1, int offset = 0, int length = 0)
         {
-            if (n < 0) return;
-
             SfxChannel sfxChannel = null;
 
             if (channel < 0)

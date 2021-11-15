@@ -60,8 +60,6 @@ namespace PicoUnity
             if (ValidateTexture(texture) == false)
                 throw new BadImageFormatException();
 
-            texture.alphaIsTransparency = false;
-
             var pixels = texture.GetPixels32();
 
             int offset = 0;

@@ -1,0 +1,30 @@
+pico-8 cartridge // http://www.pico-8.com
+version 27
+__lua__
+function _init()
+end
+
+p0 = false
+p1 = false
+
+function _update()
+    if btnp(4) then
+     if p0 then sfx(-1, 0)
+     else sfx(0, 0)
+     end
+     p0 = not p0
+    end
+    if btnp(5) then
+        sfx(1)
+    end
+end
+
+function _draw()
+	cls()
+ print('sfx test')
+ print('press 🅾️ for sfx 0')
+ print('press ❎ for sfx 1')
+end
+__sfx__
+010900000c057170570c057170570c000170000c00017000240002400024000240001800018000180001800018000180001800018000180003000030000300003000030000300003000030000000000000000000
+01160000215101d510195251a535215351d520195151a5152151221515215252252521525215150e51511515205141c510195251c535205351c520195151c5152051220515205252152520525205150d51510515

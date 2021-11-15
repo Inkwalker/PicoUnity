@@ -1,55 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace PicoUnity
+﻿
+namespace PicoUnity.Audio
 {
     internal class Oscillator
-    {       
-        private AudioNote note;
+    {
+        public float Frequency { get; set; }
+        public float Volume { get; set; }
+        public AudioSynth.Waveform Waveform { get; set; }
 
-        private bool   stopSignal;
-        private double time;
+        private float phase;
 
-        public bool Stopped { get; private set; }
-
-        public Oscillator(AudioNote note)
+        public Oscillator(float frequency, AudioSynth.Waveform waveform)
         {
-            Reset(note);
+            Volume = 1;
+
+            Frequency = frequency;
+            Waveform = waveform;
         }
 
-        public void Reset(AudioNote note)
+        public void Reset()
         {
-            this.note = note;
-            Stopped = false;
-            time = 0;
-            stopSignal = false;
+            phase = 0;
         }
 
-        public float Sample(double dt)
+        public double Step(double deltaTime)
         {
-            if (Stopped) return 0;
-
-            float sample = 0;
-            if (stopSignal)
-            {
-                double osct = 1.0 / note.hz;
-                double rot = time % osct / osct;
-                double delta_rot = dt % osct / osct;
-
-                Stopped = rot + delta_rot > 1;
-            }
-
-            if (!Stopped)
-                sample = (float)AudioSynth.PlayNote(note, time);
-
-            time = (time + dt) % 1;
-
+            var sample = AudioSynth.Oscillate(Waveform, phase) * Volume;
+            phase = (phase + (float)(deltaTime * Frequency)) % 1;
             return sample;
-        }
-
-        public void Stop()
-        {
-            stopSignal = true;
         }
     }
 }

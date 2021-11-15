@@ -111,16 +111,18 @@ namespace PicoUnity
             memory.CopyTo(buffer, MemoryModule.ADDR_VRAM, 0, MemoryModule.SIZE_VRAM);
 
             //TODO: color mapping in shaders
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                byte lo = (byte)(buffer[i] & 0xf);
-                byte hi = (byte)(buffer[i] >> 4);
+            //for (int i = 0; i < buffer.Length; i++)
+            //{
+            //    byte lo = (byte)(buffer[i] & 0xf);
+            //    byte hi = (byte)(buffer[i] >> 4);
                 
-                buffer[i] = (byte)(GetScreenColor(hi) << 4 | GetScreenColor(lo));
-            }
+            //    buffer[i] = (byte)(GetScreenColor(hi) << 4 | GetScreenColor(lo));
+            //}
 
             Texture.LoadRawTextureData(buffer);
             Texture.Apply();
+
+            Cls();
         }
 
         private byte GetDrawColor(byte penColor)

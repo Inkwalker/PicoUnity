@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
-using UnityEditor.Experimental.AssetImporters;
 using System.IO;
+
 
 namespace PicoUnity
 {
-    [ScriptedImporter(1, "p8")]
-    public class CartridgeImporter : ScriptedImporter
+    [UnityEditor.AssetImporters.ScriptedImporter(1, "p8")]
+    public class CartridgeImporter : UnityEditor.AssetImporters.ScriptedImporter
     {
-        public override void OnImportAsset(AssetImportContext ctx)
+        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx)
         {
             string txt = File.ReadAllText(ctx.assetPath);
 
