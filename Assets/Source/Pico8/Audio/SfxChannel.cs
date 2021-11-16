@@ -16,12 +16,15 @@ namespace PicoUnity
         private int       loopStart;
         private int       loopEnd;
         private int       length;
+        private int       activeInstrument;
 
         private MemoryModule mem;
 
         private SfxInstrument[] instruments;
 
-        public bool IsPlaying => sfxPointer > 0;
+        private Arpeggiator arpeggiator;
+
+        public bool IsPlaying { get; private set; }
         public bool Looping { get; set; }
 
         public SfxChannel(MemoryModule mem)
@@ -30,15 +33,18 @@ namespace PicoUnity
 
             instruments = new SfxInstrument[8];
 
-            instruments[0] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Triangle};
-            instruments[1] = new SfxInstrument() { Waveform = AudioSynth.Waveform.TiltedTriangle};
-            instruments[2] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Sawtooth};
-            instruments[3] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Square};
-            instruments[4] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Pulse};
-            instruments[5] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Organ};
-            instruments[6] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Noise};
-            instruments[7] = new SfxInstrument() { Waveform = AudioSynth.Waveform.Phaser};
+            instruments[0] = new SfxInstrument (AudioSynth.Waveform.Triangle);
+            instruments[1] = new SfxInstrument (AudioSynth.Waveform.TiltedTriangle);
+            instruments[2] = new SfxInstrument (AudioSynth.Waveform.Sawtooth);
+            instruments[3] = new SfxInstrument (AudioSynth.Waveform.Square);
+            instruments[4] = new SfxInstrument (AudioSynth.Waveform.Pulse);
+            instruments[5] = new SfxInstrument (AudioSynth.Waveform.Organ);
+            instruments[6] = new SfxInstrument (AudioSynth.Waveform.Noise);
+            instruments[7] = new SfxInstrument (AudioSynth.Waveform.Phaser);
 
+            activeInstrument = -1;
+
+            arpeggiator = new Arpeggiator();
         }
 
         public void Sfx(int n, int offset = 0, int length = 0)
@@ -54,11 +60,15 @@ namespace PicoUnity
                 instruments[i].Stop();
             }
 
+            activeInstrument = -1;
+
             if (n == -1)
             {
                 sfxPointer = -1;
                 return;
             }
+
+            IsPlaying = true;
 
             sfxPointer = MemoryModule.ADDR_SOUND + 68 * n;
             sfxOffset = offset * 2;
@@ -85,7 +95,10 @@ namespace PicoUnity
             lastNote = note;
 
             int noteAddr = sfxPointer + sfxOffset;
-            note = GetNote(noteAddr); 
+            note = GetNote(noteAddr);
+
+            arpeggiator.Active = false;
+            activeInstrument = -1;
 
             for (int i = 0; i < instruments.Length; i++)
             {
@@ -93,7 +106,6 @@ namespace PicoUnity
 
                 if (instruments[i].Waveform == waveform)
                 {
-                    //TODO: Effects like arpeggio have to be persistent and don't reset after each note
                     SfxEffect effect = null;
                     switch (note.effect)
                     {
@@ -123,17 +135,32 @@ namespace PicoUnity
                             float hz = mem.Peek(sfxPointer + 65) > 8 ? 128 / 4 : 128 / 2;
                             if (note.effect == 7) hz = hz / 2;
 
-                            effect = new SfxEffectArpeggio(n0.hz, n1.hz, n2.hz, n3.hz, hz);
+                            arpeggiator.NoteTime = 1 / hz;
+                            arpeggiator.SetNotes(n0.hz, n1.hz, n2.hz, n3.hz);
+                            arpeggiator.Active = true;
+
+                            effect = null;
                             break;
                     }
 
-                    instruments[i].Play(note, effect);
+                    if (note.volume == 0)
+                    {
+                        instruments[i].Stop();
+                    }
+                    else 
+                    {
+                        activeInstrument = i;
+                        instruments[i].Play(note.hz, note.Volume01, effect);
+                    }
                 }
                 else
                 {
                     instruments[i].Stop();
                 }
             }
+
+            //reset the arpeggiator if not in use
+            if (!arpeggiator.Active) arpeggiator.Reset();
         }
 
         private void StepNode()
@@ -147,6 +174,7 @@ namespace PicoUnity
             if (sfxOffset > 63)
             {
                 sfxPointer = -1;
+                activeInstrument = -1;
             }
             else
             {
@@ -157,7 +185,7 @@ namespace PicoUnity
 
         public float Sample(double delta)
         {
-            if (sfxPointer < 0) return 0;
+            if (sfxPointer < 0 && !IsPlaying) return 0;
 
             time = (time + delta) % 10;
 
@@ -166,10 +194,18 @@ namespace PicoUnity
                 StepNode();
             }
 
+            if (arpeggiator.Active && activeInstrument > -1)
+            {
+                instruments[activeInstrument].Frequency = arpeggiator.Step(delta);
+            }
+
+            IsPlaying = false;
             float sample = 0;
             for (int i = 0; i < instruments.Length; i++)
             {
                 sample += instruments[i].Sample(delta);
+
+                if (instruments[i].Active) IsPlaying = true;
             }
 
             if (sample > 1) sample = 1;

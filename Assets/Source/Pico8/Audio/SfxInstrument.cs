@@ -8,7 +8,22 @@ namespace PicoUnity
     {
         private const float SUSTAIN_FREQUENCY_DELTA = 440; 
 
-        public AudioNote Note { get; private set; }
+        public float Frequency 
+        {
+            get => frequency;
+            set
+            {
+                frequency = value;
+
+                foreach (var voice in voices)
+                {
+                    if (voice.Triggered)
+                    {
+                        voice.Oscillator.Frequency = frequency;
+                    }
+                }
+            }
+        }
         public AudioSynth.Waveform Waveform { get; set; }
 
         public bool Active => voices.Count > 0;
@@ -28,30 +43,32 @@ namespace PicoUnity
 
         private double time;
         private List<Voice> voices;
+        private float frequency;
 
 
-        public SfxInstrument()
+        public SfxInstrument(AudioSynth.Waveform waveform)
         {
-            Waveform = AudioSynth.Waveform.Triangle;
+            Waveform = waveform;
 
             voices = new List<Voice>();
         }
 
-        public void Play(AudioNote note, SfxEffect effect = null)
+        //TODO: smooth volume changes.
+        //Volume have to be changed gradually otherwise it causes audible pops and clicks.
+        public void Play(float hz, float volume, SfxEffect effect = null)
         {
-            Note = note;
-            Waveform = (AudioSynth.Waveform)note.waveform;
+            Frequency = hz;
 
             Voice noteConsumedByVoice = null;
             foreach (var item in voices)
             {
                 if (item.Triggered)
                 {
-                    if (item.Oscillator.Frequency > note.hz - SUSTAIN_FREQUENCY_DELTA && 
-                        item.Oscillator.Frequency < note.hz + SUSTAIN_FREQUENCY_DELTA)
+                    if (item.Oscillator.Frequency > hz - SUSTAIN_FREQUENCY_DELTA && 
+                        item.Oscillator.Frequency < hz + SUSTAIN_FREQUENCY_DELTA)
                     {
-                        item.Oscillator.Frequency = note.hz;
-                        item.Oscillator.Volume = note.Volume01;
+                        item.Oscillator.Frequency = hz;
+                        item.Oscillator.Volume = volume;
                         item.Oscillator.Waveform = Waveform;
 
                         item.SetEffect(effect);
@@ -70,7 +87,7 @@ namespace PicoUnity
             {
                 var voice = new Voice(Waveform);
                 voice.SetEffect(effect);
-                voice.Trigger(note.hz, note.Volume01);
+                voice.Trigger(hz, volume);
                 voices.Add(voice);
             }
         }
