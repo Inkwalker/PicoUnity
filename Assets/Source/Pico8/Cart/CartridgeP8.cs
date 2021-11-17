@@ -38,23 +38,26 @@ namespace PicoUnity
             delimiter = ReadHeader(reader);
             delimiter = ReadLua(reader);
 
-            if (delimiter == "__gfx__")
-                delimiter = ReadGfx(reader);
+            while (!string.IsNullOrEmpty(delimiter))
+            {
+                if (delimiter == "__gfx__")
+                    delimiter = ReadGfx(reader);
 
-            if (delimiter == "__gff__")
-                delimiter = ReadGff(reader);
+                if (delimiter == "__gff__")
+                    delimiter = ReadGff(reader);
 
-            if (delimiter == "__label__")
-                delimiter = ReadLabel(reader);
+                if (delimiter == "__label__")
+                    delimiter = ReadLabel(reader);
 
-            if (delimiter == "__map__")
-                delimiter = ReadMap(reader);
+                if (delimiter == "__map__")
+                    delimiter = ReadMap(reader);
 
-            if (delimiter == "__sfx__")
-                delimiter = ReadSfx(reader);
+                if (delimiter == "__sfx__")
+                    delimiter = ReadSfx(reader);
 
-            if (delimiter == "__music__")
-                ReadMusic(reader);
+                if (delimiter == "__music__")
+                    delimiter = ReadMusic(reader);
+            }
 
             reader.Dispose();
         }
@@ -214,11 +217,38 @@ namespace PicoUnity
 
         private string ReadMusic(StringReader reader)
         {
-
-            //TODO
             string delimiter;
 
-            string music = ReadSection(reader, out delimiter, false);
+            string section = ReadSection(reader, out delimiter, true);
+
+            using (var musicReader = new StringReader(section))
+            {
+                var frame = musicReader.ReadLine();
+
+                int frame_i = 0;
+                while (!string.IsNullOrEmpty(frame))
+                {
+                    int frame_addr = MemoryModule.ADDR_MUSIC + frame_i * 4; //4 bytes per frame
+
+                    var flags = ReadByte(frame, 0);
+                    var sfx_0 = ReadByte(frame, 3);
+                    var sfx_1 = ReadByte(frame, 5);
+                    var sfx_2 = ReadByte(frame, 7);
+                    var sfx_3 = ReadByte(frame, 9);
+
+                    int loop_start = (flags & 1) << 7;
+                    int loop_end   = (flags & 2) << 7;
+                    int stop       = (flags & 4) << 7;
+
+                    Rom[frame_addr]     = (byte)(sfx_0 | loop_start);
+                    Rom[frame_addr + 1] = (byte)(sfx_1 | loop_end);
+                    Rom[frame_addr + 2] = (byte)(sfx_2 | stop);
+                    Rom[frame_addr + 3] = sfx_3;
+
+                    frame_i++;
+                    frame = musicReader.ReadLine();
+                }
+            }
 
             return delimiter;
         }
