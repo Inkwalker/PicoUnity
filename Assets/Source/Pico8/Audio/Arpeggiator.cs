@@ -1,9 +1,6 @@
-﻿using System.Collections;
-using UnityEngine;
-
-namespace PicoUnity
+﻿namespace PicoUnity.Audio
 {
-    public class Arpeggiator 
+    internal class Arpeggiator 
     {
         public float[] Notes { get; }
         public float NoteTime { get; set; }

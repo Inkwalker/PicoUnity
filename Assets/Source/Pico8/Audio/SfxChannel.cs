@@ -1,6 +1,4 @@
 ﻿using PicoUnity.Audio;
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace PicoUnity
@@ -9,13 +7,13 @@ namespace PicoUnity
     {
         private int       sfxPointer = -1;
         private int       sfxOffset;
+        private int       sfxLength;
         private double    time;
         private float     noteLength;
         private AudioNote note;
         private AudioNote lastNote;
         private int       loopStart;
         private int       loopEnd;
-        private int       length;
         private int       activeInstrument;
 
         private MemoryModule mem;
@@ -77,13 +75,17 @@ namespace PicoUnity
             loopStart = mem.Peek(sfxPointer + 66);
             loopEnd = mem.Peek(sfxPointer + 67);
 
-            Debug.Log($"Loop: {loopStart} - {loopEnd}");
-
             lastNote = note = AudioNote.Default;
 
             Looping = loopStart != loopEnd;
 
-            this.length = length;
+            int sfxLength = GetSfxLength(n);
+            if (length == 0) length = sfxLength;
+
+            if (offset + length > sfxLength)
+                this.sfxLength = sfxLength * 2;
+            else 
+                this.sfxLength = (offset + length) * 2;
 
             if (note.isCustom) Debug.LogWarning("Sfx: custom instruments are not supported");
 
@@ -171,10 +173,15 @@ namespace PicoUnity
             }
 
             sfxOffset += 2;
-            if (sfxOffset > 63)
+            if (sfxOffset >= sfxLength)
             {
                 sfxPointer = -1;
                 activeInstrument = -1;
+
+                for (int i = 0; i < instruments.Length; i++)
+                {
+                    instruments[i].Stop();
+                }
             }
             else
             {
@@ -199,7 +206,7 @@ namespace PicoUnity
                 instruments[activeInstrument].Frequency = arpeggiator.Step(delta);
             }
 
-            IsPlaying = false;
+            IsPlaying = sfxOffset < sfxLength && sfxPointer > -1;
             float sample = 0;
             for (int i = 0; i < instruments.Length; i++)
             {
@@ -220,6 +227,22 @@ namespace PicoUnity
             byte hi = mem.Peek(addr + 1);
 
             return AudioNote.Decode(lo, hi);
+        }
+
+        private int GetSfxLength(int n)
+        {
+            int pointer = MemoryModule.ADDR_SOUND + 68 * n;
+
+            for (int i = 31; i >= 0; i--)
+            {
+                int addr = pointer + i * 2;
+
+                var note = GetNote(addr);
+
+                if (note.volume > 0) return i + 1;
+            }
+
+            return 0;
         }
     }
 }
