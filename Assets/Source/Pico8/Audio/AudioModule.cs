@@ -1,29 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace PicoUnity
 {
     public class AudioModule : EmulatorModule
     {
-        private SfxChannel[] channels;
+        private MusicPlayer musicPlayer;
+        private SfxChannelManager channelManager;
         private double sampleDelta;
         private float gain = 0.5f;
+        private bool reducedSampleRate;
 
         public AudioModule(MemoryModule memory, int sampleRate)
         {
-            channels = new SfxChannel[4];
+            channelManager = new SfxChannelManager(memory, 4);
 
-            for (int i = 0; i < channels.Length; i++)
-            {
-                channels[i] = new SfxChannel(memory);
-            }
+            musicPlayer = new MusicPlayer(memory, channelManager);
 
             sampleDelta = 1d / sampleRate;
+
+            reducedSampleRate = sampleRate > 44000; //If we run at 44kHz then halve the sampling rate to match original 22kHz
         }
 
         public void Music(int n, int fade_ms = 0, int channelmask = 0)
         {
+            if (n >= 0 && n < 64)
+                musicPlayer.Start(n);
+            else
+                musicPlayer.Stop();
         }
 
         public void Sfx(int n, int channel = -1, int offset = 0, int length = 0)
@@ -32,18 +35,11 @@ namespace PicoUnity
 
             if (channel < 0)
             {
-                foreach (var item in channels)
-                {
-                    if (item.IsPlaying == false)
-                    {
-                        sfxChannel = item;
-                        break;
-                    }
-                }
+                sfxChannel = channelManager.GetFreeChannel();
             }
             else
             {
-                sfxChannel = channels[channel];
+                sfxChannel = channelManager.GetChannel(channel);
             }
 
             if (sfxChannel != null)
@@ -63,18 +59,27 @@ namespace PicoUnity
         {
             int samples = data.Length;
 
+            double delta = reducedSampleRate ? sampleDelta * 2 : sampleDelta;
+
             for (var i = 0; i < samples; i = i + channels)
             {
                 float sample = 0;
-                for (int c = 0; c < this.channels.Length; c++)
+                for (int c = 0; c < channelManager.Count; c++)
                 {
-                    sample += gain * this.channels[c].Sample(sampleDelta);
+                    sample += gain * channelManager.GetChannel(c).Sample(delta);
                 }
 
                 for (int j = 0; j < channels; j++)
                 {
                     data[i + j] = sample;
+
+                    if (reducedSampleRate)
+                        data[i + channels + j] = sample;
                 }
+
+                if (reducedSampleRate) i += channels;
+
+                musicPlayer.Update();
             }
         }
     }
