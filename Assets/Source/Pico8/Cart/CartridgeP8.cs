@@ -237,8 +237,8 @@ namespace PicoUnity
                     var sfx_3 = ReadByte(frame, 9);
 
                     int loop_start = (flags & 1) << 7;
-                    int loop_end   = (flags & 2) << 7;
-                    int stop       = (flags & 4) << 7;
+                    int loop_end   = (flags & 2) << 6;
+                    int stop       = (flags & 4) << 5;
 
                     Rom[frame_addr]     = (byte)(sfx_0 | loop_start);
                     Rom[frame_addr + 1] = (byte)(sfx_1 | loop_end);
